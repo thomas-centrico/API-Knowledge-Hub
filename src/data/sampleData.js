@@ -619,19 +619,106 @@ export const sampleAPIs = [
   // Oracle APIs
   {
     id: 'oracle-001',
-    name: 'Core Database API',
+    name: 'WEBLOGIC_DBA.CRC_PKG_EXT_INTERFACE.CRC_FN_ABI_BY_ID_BANK(IN_ID_BANCA IN NUMBER)',
     type: 'ORACLE_API',
     category: 'database',
     status: 'active',
-    version: '19c Enterprise',
-    description: 'Primary Oracle database interface providing CRUD operations, stored procedures, triggers, and advanced query capabilities for core business data.',
-    tags: ['database', 'oracle', 'crud', 'procedures', 'queries'],
+    version: 'v1.0',
+    description: 'Oracle function to retrieve ABI (Italian Banking Association) code for a given bank ID. Part of the CRC external interface package used for bank identification and validation.',
+    tags: ['weblogic', 'banking', 'abi-code', 'lookup', 'external-interface'],
     owner: 'Patricia Wong',
     department: 'Database Administration',
-    lastUpdated: '2024-10-25T09:00:00Z',
+    lastUpdated: '2024-11-04T10:00:00Z',
     createdAt: '2022-08-15T08:00:00Z',
+    
+    // Core Metadata
+    owningProject: 'Banking Core System',
+    businessFunction: 'Bank identification and validation for payment processing and account verification',
+    consumerProjects: ['Payment Gateway', 'Account Management', 'Wire Transfer Service', 'KYC Validation'],
+    technologyStack: 'Oracle PL/SQL, WebLogic Server',
+    interfaceType: 'PL/SQL Function',
+    
+    // Endpoints
+    endpointURL: 'jdbc:oracle:thin:@weblogic.company.com:1521:PROD/WEBLOGIC_DBA',
+    environments: {
+      dev: 'jdbc:oracle:thin:@weblogic-dev.company.com:1521:DEV/WEBLOGIC_DBA',
+      qa: 'jdbc:oracle:thin:@weblogic-qa.company.com:1521:QA/WEBLOGIC_DBA',
+      uat: 'jdbc:oracle:thin:@weblogic-uat.company.com:1521:UAT/WEBLOGIC_DBA',
+      prod: 'jdbc:oracle:thin:@weblogic.company.com:1521:PROD/WEBLOGIC_DBA'
+    },
+    
+    // Authentication
+    authentication: {
+      method: 'Oracle Wallet + Service Account',
+      tokenEndpoint: 'N/A - Database authentication',
+      accessControl: 'Schema-level privileges + IP Whitelist',
+      onboardingSteps: '1. Request database access via ServiceNow. 2. Provide IP address for whitelisting. 3. Receive Oracle Wallet credentials. 4. Test connection in DEV environment.'
+    },
+    
+    // Input Specifications
+    inputSpecifications: {
+      format: 'PL/SQL Parameters',
+      mandatoryFields: ['IN_ID_BANCA'],
+      optionalFields: [],
+      validationRules: 'IN_ID_BANCA must be a valid NUMBER type, positive integer, existing in BANK_MASTER table'
+    },
+    
+    // Output Specifications
+    outputSpecifications: {
+      format: 'VARCHAR2',
+      successResponse: 'Returns 5-digit ABI code (e.g., "03069")',
+      errorResponse: 'NULL or raises ORA-01403 (no data found)',
+      errorCodes: ['ORA-01403: No data found', 'ORA-01722: Invalid number', 'ORA-06502: Numeric or value error']
+    },
+    
+    // Functional Behavior
+    functionalBehavior: {
+      summary: 'Queries BANK_MASTER table to retrieve the Italian Banking Association (ABI) code corresponding to the provided bank ID. Used for regulatory compliance and interbank communications.',
+      dependencies: ['BANK_MASTER table', 'CRC_PKG_EXT_INTERFACE package'],
+      transactionHandling: 'Read-only operation, no transaction commit/rollback required'
+    },
+    
+    // Versioning
+    versioning: {
+      currentVersion: 'v1.0',
+      changeLog: [
+        'v1.0 (2022-08-15) - Initial release',
+        'v1.1 (2023-03-20) - Added error handling for NULL bank IDs',
+        'v1.2 (2024-01-10) - Performance optimization with index'
+      ],
+      compatibility: 'Backward compatible - all versions supported'
+    },
+    
+    // Performance
+    performance: {
+      rateLimits: 'No explicit limit - governed by database connection pool (max 100 concurrent)',
+      timeouts: '30 seconds query timeout',
+      expectedResponseTime: '45ms average'
+    },
+    
+    // Monitoring
+    monitoring: {
+      loggingLocation: '/var/log/oracle/weblogic_dba.log',
+      monitoringTool: 'Oracle Enterprise Manager + Grafana',
+      errorReporting: 'PagerDuty alerts for failures, Jira for tracking'
+    },
+    
+    // Consumer Guidelines
+    consumerGuidelines: {
+      sampleCode: 'DECLARE v_abi VARCHAR2(10); BEGIN v_abi := WEBLOGIC_DBA.CRC_PKG_EXT_INTERFACE.CRC_FN_ABI_BY_ID_BANK(12345); DBMS_OUTPUT.PUT_LINE(v_abi); END;',
+      retryLogic: 'Retry up to 3 times with exponential backoff (1s, 2s, 4s) for ORA-00060 (deadlock) errors',
+      bestPractices: 'Cache results for 24 hours to reduce database load. Always validate IN_ID_BANCA before calling. Handle NULL returns gracefully.'
+    },
+    
+    // Support
+    support: {
+      apiOwner: 'Patricia Wong (patricia.wong@company.com)',
+      supportChannel: 'Email: dba-team@company.com | Slack: #oracle-db | Jira: DBA Project'
+    },
+    
+    // Legacy fields for backward compatibility
     documentation: {
-      url: 'https://docs.company.com/oracle/core-db',
+      url: 'https://docs.company.com/oracle/weblogic-crc-interface',
       hasInteractiveDocs: false,
     },
     dependencies: [],
@@ -641,12 +728,13 @@ export const sampleAPIs = [
       uniqueUsers: 1200,
     },
     technical: {
-      baseUrl: 'oracle://db.company.com:1521/PROD',
-      connectionString: 'jdbc:oracle:thin:@db.company.com:1521:PROD',
-      schemaName: 'CORE_SCHEMA',
-      procedureName: 'PKG_CORE.SP_CRUD_OPERATIONS',
+      baseUrl: 'oracle://weblogic.company.com:1521/PROD',
+      connectionString: 'jdbc:oracle:thin:@weblogic.company.com:1521:PROD',
+      schemaName: 'WEBLOGIC_DBA',
+      procedureName: 'CRC_PKG_EXT_INTERFACE.CRC_FN_ABI_BY_ID_BANK',
+      functionSignature: 'CRC_FN_ABI_BY_ID_BANK(IN_ID_BANCA IN NUMBER) RETURN VARCHAR2',
       authMethod: 'Oracle Wallet + Service Account',
-      responseTime: 65,
+      responseTime: 45,
       slaUptime: 99.9,
     },
     contact: {
@@ -655,35 +743,25 @@ export const sampleAPIs = [
       slackChannel: '#oracle-db',
     },
     sampleRequest: {
-      operation: 'SELECT',
-      tableName: 'CUSTOMERS',
-      columns: ['customer_id', 'name', 'email', 'status'],
-      whereClause: {
-        status: 'ACTIVE',
-        created_date: '>= SYSDATE-30'
-      },
-      orderBy: 'customer_id DESC',
-      limit: 100
+      parameters: [
+        {
+          name: 'IN_ID_BANCA',
+          value: 12345,
+          type: 'NUMBER'
+        }
+      ]
     },
     sampleResponse: {
       success: true,
-      recordCount: 85,
       data: [
         {
-          customer_id: 12345,
-          name: 'John Doe',
-          email: 'john.doe@example.com',
-          status: 'ACTIVE'
-        },
-        {
-          customer_id: 12344,
-          name: 'Jane Smith',
-          email: 'jane.smith@example.com',
-          status: 'ACTIVE'
+          ABI_CODE: '03069'
         }
       ],
-      executionTime: 65,
-      timestamp: '2024-10-25T09:00:00Z'
+      executionTime: 45,
+      procedureName: 'CRC_FN_ABI_BY_ID_BANK',
+      schemaName: 'WEBLOGIC_DBA',
+      returnType: 'VARCHAR2'
     }
   },
   {

@@ -561,59 +561,188 @@ const AdminPanel = () => {
 
               {/* Technical Details - ORACLE API */}
               {formData.type === 'ORACLE_API' && (
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Oracle API Technical Details</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Base URL *</label>
-                      <input
-                        type="text"
-                        name="technical.baseUrl"
-                        value={formData.technical.baseUrl}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="oracle://db.company.com:1521/PROD"
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">JDBC Connection String *</label>
-                      <input
-                        type="text"
-                        name="technical.connectionString"
-                        value={formData.technical.connectionString}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="jdbc:oracle:thin:@db.company.com:1521:PROD"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Schema Name *</label>
-                      <input
-                        type="text"
-                        name="technical.schemaName"
-                        value={formData.technical.schemaName}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="CORE_SCHEMA"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Procedure/Package Name *</label>
-                      <input
-                        type="text"
-                        name="technical.procedureName"
-                        value={formData.technical.procedureName}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="PKG_CORE.SP_PROCEDURE"
-                      />
+                <>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Oracle API Technical Details</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Base URL *</label>
+                        <input
+                          type="text"
+                          name="technical.baseUrl"
+                          value={formData.technical.baseUrl}
+                          onChange={handleInputChange}
+                          required
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="oracle://db.company.com:1521/PROD"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">JDBC Connection String *</label>
+                        <input
+                          type="text"
+                          name="technical.connectionString"
+                          value={formData.technical.connectionString}
+                          onChange={handleInputChange}
+                          required
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="jdbc:oracle:thin:@db.company.com:1521:PROD"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Schema Name *</label>
+                        <input
+                          type="text"
+                          name="technical.schemaName"
+                          value={formData.technical.schemaName}
+                          onChange={handleInputChange}
+                          required
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="CORE_SCHEMA"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Procedure/Package Name *</label>
+                        <input
+                          type="text"
+                          name="technical.procedureName"
+                          value={formData.technical.procedureName}
+                          onChange={handleInputChange}
+                          required
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="PKG_CORE.SP_PROCEDURE"
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
+
+                  {/* Oracle API Core Metadata */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Core Metadata</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Owning Project</label>
+                        <input
+                          type="text"
+                          name="owningProject"
+                          value={formData.owningProject || ''}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="Banking Core System"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Interface Type</label>
+                        <input
+                          type="text"
+                          name="interfaceType"
+                          value={formData.interfaceType || ''}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="PL/SQL Function"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Business Function</label>
+                        <textarea
+                          name="businessFunction"
+                          value={formData.businessFunction || ''}
+                          onChange={handleInputChange}
+                          rows="2"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="Description of business process this API supports"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Technology Stack</label>
+                        <input
+                          type="text"
+                          name="technologyStack"
+                          value={formData.technologyStack || ''}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="Oracle PL/SQL, WebLogic Server"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Consumer Projects (comma-separated)</label>
+                        <input
+                          type="text"
+                          name="consumerProjects"
+                          value={formData.consumerProjects?.join(', ') || ''}
+                          onChange={(e) => handleInputChange({
+                            target: {
+                              name: 'consumerProjects',
+                              value: e.target.value.split(',').map(s => s.trim()).filter(Boolean)
+                            }
+                          })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="Payment Gateway, Account Management, Wire Transfer"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Environments */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Environments</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Development URL</label>
+                        <input
+                          type="text"
+                          name="environments.dev"
+                          value={formData.environments?.dev || ''}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="jdbc:oracle:thin:@dev-server:1521:DEV"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">QA URL</label>
+                        <input
+                          type="text"
+                          name="environments.qa"
+                          value={formData.environments?.qa || ''}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="jdbc:oracle:thin:@qa-server:1521:QA"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">UAT URL</label>
+                        <input
+                          type="text"
+                          name="environments.uat"
+                          value={formData.environments?.uat || ''}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="jdbc:oracle:thin:@uat-server:1521:UAT"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Production URL</label>
+                        <input
+                          type="text"
+                          name="environments.prod"
+                          value={formData.environments?.prod || ''}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="jdbc:oracle:thin:@prod-server:1521:PROD"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Note for additional fields */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <p className="text-sm text-blue-800">
+                      <strong>Note:</strong> Additional Oracle API metadata fields (Authentication Details, Input/Output Specifications, 
+                      Functional Behavior, Versioning, Performance, Monitoring, Consumer Guidelines, Support) can be added by editing 
+                      the API data in sampleData.js or through future admin panel enhancements.
+                    </p>
+                  </div>
+                </>
               )}
 
               {/* Common Technical Fields */}
