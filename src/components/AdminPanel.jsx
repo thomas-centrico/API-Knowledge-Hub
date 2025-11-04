@@ -66,13 +66,38 @@ const AdminPanel = () => {
   const handleOpenForm = (api = null) => {
     if (api) {
       setEditingAPI(api);
+      
+      // Start with empty form structure to ensure all required objects exist
+      const emptyForm = getEmptyForm();
+      
+      // Merge API data with empty form, ensuring proper structure
       setFormData({
+        ...emptyForm,
         ...api,
-        tags: api.tags.join(', '),
-        dependencies: api.dependencies.join(', '),
-        dependents: api.dependents.join(', '),
-        sampleRequest: JSON.stringify(api.sampleRequest, null, 2),
-        sampleResponse: JSON.stringify(api.sampleResponse, null, 2),
+        // Handle array properties safely
+        tags: (api.tags || []).join(', '),
+        dependencies: (api.dependencies || []).join(', '),
+        dependents: (api.dependents || []).join(', '),
+        // Handle nested objects safely
+        documentation: {
+          ...emptyForm.documentation,
+          ...(api.documentation || {})
+        },
+        usage: {
+          ...emptyForm.usage,
+          ...(api.usage || {})
+        },
+        technical: {
+          ...emptyForm.technical,
+          ...(api.technical || {})
+        },
+        contact: {
+          ...emptyForm.contact,
+          ...(api.contact || {})
+        },
+        // Handle JSON properties safely
+        sampleRequest: JSON.stringify(api.sampleRequest || {}, null, 2),
+        sampleResponse: JSON.stringify(api.sampleResponse || {}, null, 2),
       });
     } else {
       setEditingAPI(null);
