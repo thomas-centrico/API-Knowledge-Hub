@@ -102,43 +102,12 @@ const APIDetail = ({ api, onBack, relatedAPIs }) => {
             <p className="text-sm text-gray-500">Category</p>
             <p className="font-medium text-gray-900 capitalize">{api.category}</p>
           </div>
-          <div>
-            <p className="text-sm text-gray-500">Created</p>
-            <p className="font-medium text-gray-900">{formatDate(api.createdAt)}</p>
-          </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Usage Statistics */}
-          <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Usage Statistics</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <Activity className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-blue-600">{formatNumber(api.usage?.requestsPerDay || 0)}</p>
-                <p className="text-sm text-gray-600">Requests/Day</p>
-              </div>
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <Users className="w-8 h-8 text-green-500 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-green-600">{formatNumber(api.usage?.uniqueUsers || 0)}</p>
-                <p className="text-sm text-gray-600">Active Users</p>
-              </div>
-              <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                <Clock className="w-8 h-8 text-yellow-500 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-yellow-600">{api.technical?.responseTime || 0}ms</p>
-                <p className="text-sm text-gray-600">Avg Response</p>
-              </div>
-              <div className="text-center p-4 bg-purple-50 rounded-lg">
-                <Zap className="w-8 h-8 text-purple-500 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-purple-600">{api.technical?.slaUptime || 0}%</p>
-                <p className="text-sm text-gray-600">Uptime</p>
-              </div>
-            </div>
-          </div>
-
           {/* Technical Details */}
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Technical Details</h2>
@@ -872,7 +841,7 @@ const APIDetail = ({ api, onBack, relatedAPIs }) => {
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Tags</h2>
             <div className="flex flex-wrap gap-2">
-              {api.tags.map((tag) => (
+              {(api.tags || []).map((tag) => (
                 <span
                   key={tag}
                   className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-800"
@@ -901,21 +870,38 @@ const APIDetail = ({ api, onBack, relatedAPIs }) => {
                   </a>
                 </div>
               )}
+              {api.contact?.team && (
+                <div className="flex items-center space-x-3">
+                  <Users className="w-4 h-4 text-gray-500" />
+                  <span className="text-sm text-gray-900">{api.contact.team}</span>
+                </div>
+              )}
               {api.contact?.slackChannel && (
                 <div className="flex items-center space-x-3">
                   <MessageSquare className="w-4 h-4 text-gray-500" />
                   <span className="text-sm text-gray-900">{api.contact.slackChannel}</span>
                 </div>
               )}
+              {api.contact?.phone && (
+                <div className="flex items-center space-x-3">
+                  <Shield className="w-4 h-4 text-gray-500" />
+                  <a
+                    href={`tel:${api.contact.phone}`}
+                    className="text-sm text-blue-600 hover:text-blue-700"
+                  >
+                    {api.contact.phone}
+                  </a>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Dependencies */}
-          {api.dependencies.length > 0 && (
+          {(api.dependencies || []).length > 0 && (
             <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Dependencies</h2>
               <div className="space-y-2">
-                {api.dependencies.map((depId) => {
+                {(api.dependencies || []).map((depId) => {
                   const dependency = relatedAPIs.find(a => a.id === depId);
                   return (
                     <div key={depId} className="text-sm text-gray-600">
@@ -928,11 +914,11 @@ const APIDetail = ({ api, onBack, relatedAPIs }) => {
           )}
 
           {/* Dependents */}
-          {api.dependents.length > 0 && (
+          {(api.dependents || []).length > 0 && (
             <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Used By</h2>
               <div className="space-y-2">
-                {api.dependents.map((depId) => {
+                {(api.dependents || []).map((depId) => {
                   const dependent = relatedAPIs.find(a => a.id === depId);
                   return (
                     <div key={depId} className="text-sm text-gray-600">
@@ -955,9 +941,9 @@ const APIDetail = ({ api, onBack, relatedAPIs }) => {
                     className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer"
                   >
                     <div className={`w-2 h-2 rounded-full ${getTypeColor(relatedAPI.type)}`}></div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900">{relatedAPI.name}</p>
-                      <p className="text-xs text-gray-500">{relatedAPI.department}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 break-words">{relatedAPI.name}</p>
+                      <p className="text-xs text-gray-500 break-words">{relatedAPI.department}</p>
                     </div>
                   </div>
                 ))}
