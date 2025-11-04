@@ -63,7 +63,8 @@ export const createGraphLinks = (apis) => {
   
   apis.forEach(api => {
     // 1. Direct dependency relationships (strongest)
-    api.dependencies.forEach(depId => {
+    const dependencies = api.dependencies || [];
+    dependencies.forEach(depId => {
       const dependency = apis.find(a => a.id === depId);
       if (dependency) {
         links.push({
@@ -81,7 +82,8 @@ export const createGraphLinks = (apis) => {
     });
 
     // 2. Dependent relationships (reverse dependencies)
-    api.dependents.forEach(depId => {
+    const dependents = api.dependents || [];
+    dependents.forEach(depId => {
       const dependent = apis.find(a => a.id === depId);
       if (dependent) {
         // Check if we already have a dependency link for this relationship
@@ -150,14 +152,17 @@ export const createGraphLinks = (apis) => {
       });
 
     // 5. Common tags relationships (weak)
+    const apiTags = api.tags || [];
     apis
       .filter(other => {
         if (other.id === api.id || api.id >= other.id) return false;
-        const commonTags = api.tags.filter(tag => other.tags.includes(tag));
+        const otherTags = other.tags || [];
+        const commonTags = apiTags.filter(tag => otherTags.includes(tag));
         return commonTags.length >= 2; // At least 2 common tags
       })
       .forEach(other => {
-        const commonTags = api.tags.filter(tag => other.tags.includes(tag));
+        const otherTags = other.tags || [];
+        const commonTags = apiTags.filter(tag => otherTags.includes(tag));
         links.push({
           id: `tags_${api.id}_${other.id}`,
           source: api.id,

@@ -1,12 +1,18 @@
--- INSERT SCRIPTS FOR API MANAGEMENT DATABASE
+-- =============================================================================
+-- INSERT SCRIPTS FOR API KNOWLEDGE HUB DATABASE
 -- Generated from sample data in sampleData.js
+-- =============================================================================
 
--- =====================================================
--- 1. INSERT INTO API_METADATA
--- =====================================================
+-- Enable foreign key constraints
+PRAGMA foreign_keys = ON;
 
+-- =============================================================================
+-- 1. INSERT INTO API_METADATA - Core API Information
+-- =============================================================================
+
+-- REST APIs
 INSERT INTO API_METADATA (ID, NAME, TYPE, CATEGORY, STATUS, VERSION, DESCRIPTION, OWNER, DEPARTMENT, LAST_UPDATED, CREATED_AT, ENDPOINTS, BASE_URL, AUTH_METHOD, RATE_LIMIT, SLA_UPTIME, RESPONSE_TIME, DOC_URL, HAS_INTERACTIVE_DOCS, CONTACT_EMAIL, CONTACT_TEAM, SLACK_CHANNEL) VALUES
-('rest-001', 'User Management API', 'REST_API', 'authentication', 'active', 'v2.1.0', 'Comprehensive user authentication and profile management system with OAuth 2.0 support, role-based access control, and secure session management.', 'John Smith', 'Identity & Access', TIMESTAMP '2024-10-25 10:30:00', TIMESTAMP '2023-05-15 08:00:00', 24, 'https://api.company.com/users/v2', 'OAuth 2.0 Bearer Token', '1000 requests/hour per user', 99.9, 95, 'https://api-docs.company.com/user-mgmt', 'Y', 'identity-team@company.com', 'Identity & Access Management', '#identity-apis');
+('rest-001', 'notificaFirmaModulo', 'REST_API', 'authentication', 'active', 'v1.0.0', 'a new method in order to have a notification back from FEA to receive the result of signature of the document that has been generated to be digitally signed', 'ITCREDITI-INDIA', 'ITCREDITI', '2024-10-25 10:30:00', '2023-05-15 08:00:00', 1, 'http://soa.bansel.it/osb/GestioneAmministrativaGaranzie', 'OAuth 2.0 Bearer Token', '1000 requests/hour per user', 99.9, 95, 'https://api-docs.company.com/user-mgmt', 'N', 'itcrediti-support@company.com', 'ITCREDITI', '#itcrediti-api');
 
 INSERT INTO API_METADATA (ID, NAME, TYPE, CATEGORY, STATUS, VERSION, DESCRIPTION, OWNER, DEPARTMENT, LAST_UPDATED, CREATED_AT, ENDPOINTS, BASE_URL, AUTH_METHOD, RATE_LIMIT, SLA_UPTIME, RESPONSE_TIME, DOC_URL, HAS_INTERACTIVE_DOCS, CONTACT_EMAIL, CONTACT_TEAM, SLACK_CHANNEL) VALUES
 ('rest-002', 'Payment Processing API', 'REST_API', 'payment', 'active', 'v3.2.1', 'Secure payment processing with support for multiple payment methods, fraud detection, PCI compliance, and real-time transaction monitoring.', 'Sarah Johnson', 'Financial Services', TIMESTAMP '2024-10-28 14:20:00', TIMESTAMP '2023-03-10 09:15:00', 18, 'https://api.company.com/payments/v3', 'API Key + OAuth 2.0', '500 requests/hour per merchant', 99.95, 120, 'https://api-docs.company.com/payments', 'Y', 'payments-team@company.com', 'Financial Services', '#payments-api');

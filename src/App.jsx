@@ -9,6 +9,8 @@ import { FilterSidebar } from './components/FilterSidebar.jsx';
 import APIDetail from './components/APIDetail.jsx';
 import IntelligentChatbot from './components/IntelligentChatbot.jsx';
 import AdminPanel from './components/AdminPanel.jsx';
+import DataSourceIndicator from './components/DataSourceIndicator.jsx';
+import DataSourceVerification from './components/DataSourceVerification.jsx';
 import { searchAndFilter } from './lib/search.js';
 
 const AppContent = () => {
@@ -56,11 +58,19 @@ const AppContent = () => {
     const relatedAPIs = apis.filter(api => {
       if (api.id === detailViewAPI.id) return false;
       
+      // Safe access to properties with default values
+      const apiDependencies = api.dependencies || [];
+      const apiDependents = api.dependents || [];
+      const detailDependencies = detailViewAPI.dependencies || [];
+      const detailDependents = detailViewAPI.dependents || [];
+      const apiTags = api.tags || [];
+      const detailTags = detailViewAPI.tags || [];
+      
       // Include if it's a dependency or dependent
-      if (detailViewAPI.dependencies.includes(api.id) || 
-          detailViewAPI.dependents.includes(api.id) ||
-          api.dependencies.includes(detailViewAPI.id) ||
-          api.dependents.includes(detailViewAPI.id)) {
+      if (detailDependencies.includes(api.id) || 
+          detailDependents.includes(api.id) ||
+          apiDependencies.includes(detailViewAPI.id) ||
+          apiDependents.includes(detailViewAPI.id)) {
         return true;
       }
       
@@ -71,7 +81,7 @@ const AppContent = () => {
       }
       
       // Include if has common tags
-      const commonTags = api.tags.filter(tag => detailViewAPI.tags.includes(tag));
+      const commonTags = apiTags.filter(tag => detailTags.includes(tag));
       if (commonTags.length > 0) {
         return true;
       }
@@ -249,6 +259,9 @@ const AppContent = () => {
         </div>
       </div>
       
+      {/* Data Source Indicator */}
+      <DataSourceIndicator />
+      
       {/* Intelligent AI Chatbot */}
       <IntelligentChatbot />
     </div>
@@ -261,6 +274,7 @@ const App = () => {
       <Routes>
         <Route path="/" element={<AppContent />} />
         <Route path="/admin" element={<AdminPanel />} />
+        <Route path="/data-source" element={<DataSourceVerification />} />
         <Route path="*" element={<AppContent />} />
       </Routes>
     </APIProvider>
