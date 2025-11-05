@@ -1,6 +1,8 @@
 # API Reference Knowledge Graph Platform
 
-An AI-powered platform for discovering, exploring, and managing business APIs. Built for hackathon presentation.
+# API Knowledge Hub
+
+This is an AI-powered platform for discovering, exploring, and managing business APIs across different types (REST, Java, Oracle).
 
 ## 🚀 Features
 
@@ -45,17 +47,23 @@ An AI-powered platform for discovering, exploring, and managing business APIs. B
 ## 🛠 Tech Stack
 
 ### Frontend
-- **Next.js 14** with App Router
+- **React 18** with Vite
 - **TypeScript** for type safety
 - **Tailwind CSS** for styling
 - **Lucide React** for icons
 - **Framer Motion** for animations
 - **D3.js** for graph visualizations
 
+### Backend
+- **Express.js** for REST API server
+- **SQLite** for data persistence
+- **better-sqlite3** for database access
+- **CORS** enabled for development
+
 ### AI & Search
 - **Fuse.js** for fuzzy search
 - **Vector embeddings** for semantic search
-- **React Query** for data management
+- **React Context** for state management
 - **Axios** for API communication
 
 ### Visualization
@@ -91,32 +99,65 @@ src/
 ### Prerequisites
 - Node.js 18+ 
 - npm or yarn
+- SQLite (included)
 
-### Installation
+### Quick Start
 
-1. Clone the repository:
+For detailed setup instructions, see [QUICKSTART.md](QUICKSTART.md)
+
+1. **Clone the repository:**
 ```bash
 git clone <repository-url>
 cd api-reference-knowledge-graph
 ```
 
-2. Install dependencies:
+2. **Install dependencies:**
 ```bash
 npm install
 ```
 
-3. Start the development server:
+3. **Initialize database:**
+```bash
+npm run db:init
+```
+
+4. **Start backend server (Terminal 1):**
+```bash
+npm run server
+```
+
+5. **Start frontend server (Terminal 2):**
 ```bash
 npm run dev
 ```
 
-4. Open [http://localhost:3000](http://localhost:3000) in your browser
+6. **Open application:**
+- Frontend: [http://localhost:3001](http://localhost:3001)
+- Backend API: [http://localhost:3002](http://localhost:3002)
+- Health Check: [http://localhost:3002/health](http://localhost:3002/health)
 
 ### Build for Production
 ```bash
 npm run build
 npm start
 ```
+
+### NPM Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start frontend dev server (port 3001) |
+| `npm run server` | Start backend API server (port 3002) |
+| `npm run server:dev` | Start backend with auto-reload |
+| `npm run db:init` | Initialize/reset SQLite database |
+| `npm run build` | Build for production |
+| `npm start` | Start production server |
+
+### Documentation
+
+- **[QUICKSTART.md](QUICKSTART.md)** - Quick setup guide (5 minutes)
+- **[DATABASE_SETUP.md](DATABASE_SETUP.md)** - Comprehensive database documentation
+- **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** - Technical implementation details
 
 ## 🎨 Design System
 
@@ -131,14 +172,39 @@ npm start
 - **Body**: Inter font, regular weight
 - **Code**: JetBrains Mono, monospace
 
-## 📊 Demo Data
+## 📊 Data Management
 
-The platform includes sample data showcasing:
-- **REST APIs**: User management, payment processing
-- **Java APIs**: Business logic libraries
-- **Oracle APIs**: Database connections and queries
-- **Categories**: Authentication, payments, analytics, etc.
+The platform uses SQLite database for persistent storage. Sample data includes:
+
+### API Types
+- **REST APIs** (6 APIs): User management, payment processing, inventory, analytics, notifications, file storage
+- **Java APIs** (2 APIs): Data processing library, security framework
+- **Oracle APIs** (2 APIs): Customer database, order management
+
+### Features
+- **Persistent Storage**: SQLite database (`database/api_metadata.db`)
+- **RESTful Backend**: Express.js API server with CRUD operations
+- **Filtering**: Filter by type, category, status, or search terms
+- **Statistics**: Real-time statistics and analytics
 - **Relationships**: Dependencies, shared categories, common tags
+
+### Database Schema
+```sql
+API_METADATA (
+    ID, NAME, TYPE, CATEGORY, STATUS, VERSION,
+    DESCRIPTION, OWNER, DEPARTMENT, LAST_UPDATED,
+    CREATED_AT, ENDPOINTS, BASE_URL, AUTH_METHOD,
+    RATE_LIMIT, SLA_UPTIME, RESPONSE_TIME, DOC_URL,
+    HAS_INTERACTIVE_DOCS, CONTACT_EMAIL, CONTACT_TEAM,
+    SLACK_CHANNEL
+)
+```
+
+### API Endpoints
+- `GET /api/apis` - Get all APIs (with optional filters)
+- `GET /api/apis/:id` - Get single API by ID
+- `GET /api/stats` - Get database statistics
+- `GET /health` - Health check endpoint
 
 ## 🎯 Hackathon Presentation Points
 

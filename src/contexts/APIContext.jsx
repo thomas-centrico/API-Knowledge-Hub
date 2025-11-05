@@ -69,7 +69,7 @@ export const APIProvider = ({ children }) => {
   // Function to fetch APIs from database
   const fetchAPIsFromDatabase = async () => {
     try {
-      const response = await fetch('http://localhost:3003/api/apis');
+      const response = await fetch('http://localhost:3002/api/apis');
       if (!response.ok) throw new Error('Database API server not responding');
       
       const data = await response.json();
@@ -243,7 +243,7 @@ export const APIProvider = ({ children }) => {
       if (state.dataSource === 'database' && state.databaseAvailable) {
         // Add to database
         try {
-          const response = await fetch('http://localhost:3003/api/apis', {
+          const response = await fetch('http://localhost:3002/api/apis', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -290,7 +290,7 @@ export const APIProvider = ({ children }) => {
       if (state.dataSource === 'database' && state.databaseAvailable) {
         // Update in database
         try {
-          const response = await fetch(`http://localhost:3003/api/apis/${apiData.id}`, {
+          const response = await fetch(`http://localhost:3002/api/apis/${apiData.id}`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
@@ -336,7 +336,7 @@ export const APIProvider = ({ children }) => {
       if (state.dataSource === 'database' && state.databaseAvailable) {
         // Delete from database
         try {
-          const response = await fetch(`http://localhost:3003/api/apis/${apiId}`, {
+          const response = await fetch(`http://localhost:3002/api/apis/${apiId}`, {
             method: 'DELETE',
           });
           

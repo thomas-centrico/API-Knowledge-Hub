@@ -1,4 +1,4 @@
-# API Reference Knowledge Graph Platform
+# API Knowledge Hub
 
 This is an AI-powered platform for discovering, exploring, and managing business APIs across different types (REST, Java, Oracle).
 

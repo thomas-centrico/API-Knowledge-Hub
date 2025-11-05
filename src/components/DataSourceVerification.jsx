@@ -20,7 +20,7 @@ const DataSourceVerification = () => {
 
   const checkDatabaseAPIs = async () => {
     try {
-      const response = await fetch('http://localhost:3003/api/apis');
+      const response = await fetch('http://localhost:3002/api/apis');
       if (response.ok) {
         const data = await response.json();
         setDatabaseApis(data.data || []);
@@ -272,7 +272,7 @@ const DataSourceVerification = () => {
             
             {serverStatus === 'connected' && (
               <button 
-                onClick={() => window.open('http://localhost:3003/api/apis', '_blank')}
+                onClick={() => window.open('http://localhost:3002/api/apis', '_blank')}
                 className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
               >
                 🔗 View Database API
@@ -280,7 +280,7 @@ const DataSourceVerification = () => {
             )}
             
             <button 
-              onClick={() => window.open('http://localhost:3003/api/health', '_blank')}
+              onClick={() => window.open('http://localhost:3002/api/health', '_blank')}
               className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
             >
                 🏥 Health Check

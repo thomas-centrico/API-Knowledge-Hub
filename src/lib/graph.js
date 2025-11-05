@@ -48,7 +48,7 @@ export const createGraphNodes = (apis) => {
     department: api.department,
     tags: api.tags || [],
     usage: api.usage?.requestsPerDay || 0,
-    size: Math.max(15, Math.min(40, (api.usage?.requestsPerDay || 1000) / 3000)),
+    size: Math.max(30, Math.min(60, (api.usage?.requestsPerDay || 1000) / 2000 + 25)),
     color: TYPE_COLORS[api.type] || '#6b7280',
     owner: api.owner,
     version: api.version,

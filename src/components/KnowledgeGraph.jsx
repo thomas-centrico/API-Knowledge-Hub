@@ -63,7 +63,7 @@ export const KnowledgeGraph = ({
   };
 
   const getNodeSize = (node) => {
-    return node.size || 20;
+    return node.size || 35;
   };
 
   // Helper function to fit text within circle
@@ -214,15 +214,29 @@ export const KnowledgeGraph = ({
                   
                   {/* Link label on hover */}
                   {isHovered && (
-                    <text
-                      x={(sourceNode.x + targetNode.x) / 2}
-                      y={(sourceNode.y + targetNode.y) / 2 - 5}
-                      textAnchor="middle"
-                      className="text-xs font-medium fill-gray-700 pointer-events-none"
-                      style={{ fontSize: '10px' }}
-                    >
-                      {link.label}
-                    </text>
+                    <g>
+                      {/* Background rectangle for better readability */}
+                      <rect
+                        x={(sourceNode.x + targetNode.x) / 2 - link.label.length * 3.5}
+                        y={(sourceNode.y + targetNode.y) / 2 - 18}
+                        width={link.label.length * 7}
+                        height={20}
+                        fill="white"
+                        fillOpacity="0.9"
+                        stroke="#e5e7eb"
+                        strokeWidth="1"
+                        rx="3"
+                      />
+                      <text
+                        x={(sourceNode.x + targetNode.x) / 2}
+                        y={(sourceNode.y + targetNode.y) / 2 - 5}
+                        textAnchor="middle"
+                        className="text-xs font-semibold fill-gray-800 pointer-events-none"
+                        style={{ fontSize: '13px' }}
+                      >
+                        {link.label}
+                      </text>
+                    </g>
                   )}
                 </g>
               );
@@ -298,8 +312,8 @@ export const KnowledgeGraph = ({
         <g className="tooltips">
           {nodes.filter(node => hoveredNode === node.id).map((node) => {
             const nodeSize = getNodeSize(node);
-            const tooltipWidth = 160;
-            const tooltipHeight = 70;
+            const tooltipWidth = 200;
+            const tooltipHeight = 90;
             
             // Smart positioning to keep tooltip within bounds
             let tooltipX = node.x + nodeSize + 10;
@@ -342,34 +356,34 @@ export const KnowledgeGraph = ({
                   rx="4"
                 />
                 <text
-                  x={tooltipX + 8}
-                  y={tooltipY + 15}
+                  x={tooltipX + 10}
+                  y={tooltipY + 20}
                   className="text-sm font-semibold fill-gray-900"
-                  style={{ fontSize: '12px' }}
+                  style={{ fontSize: '14px', fontWeight: 'bold' }}
                 >
-                  {node.name.length > 18 ? node.name.substring(0, 18) + '...' : node.name}
+                  {node.name.length > 22 ? node.name.substring(0, 22) + '...' : node.name}
                 </text>
                 <text
-                  x={tooltipX + 8}
-                  y={tooltipY + 30}
+                  x={tooltipX + 10}
+                  y={tooltipY + 40}
                   className="text-xs fill-gray-600"
-                  style={{ fontSize: '10px' }}
+                  style={{ fontSize: '12px' }}
                 >
                   Type: {node.type.replace('_', ' ')}
                 </text>
                 <text
-                  x={tooltipX + 8}
-                  y={tooltipY + 44}
-                  className="text-xs fill-gray-600"
-                  style={{ fontSize: '10px' }}
-                >
-                  Dept: {node.department.length > 15 ? node.department.substring(0, 15) + '...' : node.department}
-                </text>
-                <text
-                  x={tooltipX + 8}
+                  x={tooltipX + 10}
                   y={tooltipY + 58}
                   className="text-xs fill-gray-600"
-                  style={{ fontSize: '10px' }}
+                  style={{ fontSize: '12px' }}
+                >
+                  Dept: {node.department.length > 20 ? node.department.substring(0, 20) + '...' : node.department}
+                </text>
+                <text
+                  x={tooltipX + 10}
+                  y={tooltipY + 76}
+                  className="text-xs fill-gray-600"
+                  style={{ fontSize: '12px' }}
                 >
                   Usage: {node.usage.toLocaleString()}/day
                 </text>

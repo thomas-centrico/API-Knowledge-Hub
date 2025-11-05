@@ -4,8 +4,8 @@ const cors = require('cors');
 const path = require('path');
 
 const app = express();
-const PORT = 3003; // Different port from your React app
-const DB_PATH = path.join(__dirname, 'database', 'local_api_knowledge_hub.db');
+const PORT = 3002; // Backend API port
+const DB_PATH = 'C:\\Users\\gbs02099\\OneDrive - Sella\\Documents\\2025\\Hack\\APIDATA.db';
 
 // Middleware
 app.use(cors());
@@ -15,9 +15,11 @@ app.use(express.json());
 const db = new sqlite3.Database(DB_PATH, (err) => {
     if (err) {
         console.error('❌ Error connecting to database:', err.message);
+        console.error('Database path attempted:', DB_PATH);
         process.exit(1);
     }
     console.log('✅ Connected to SQLite database');
+    console.log('📊 Database path:', DB_PATH);
 });
 
 // Helper function to get API with all related data

@@ -39,7 +39,7 @@ export const Header = ({ onSearch }) => {
               <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
                 <BrainNetwork className="w-5 h-5 text-white" />
               </div>
-              <h1 className="text-xl font-bold text-gray-900">API Knowledge Graph</h1>
+              <h1 className="text-xl font-bold text-gray-900">API Knowledge Hub</h1>
             </div>
           </div>
 

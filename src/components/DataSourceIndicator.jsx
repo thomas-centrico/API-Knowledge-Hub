@@ -139,7 +139,7 @@ const DataSourceIndicator = () => {
               </button>
               {databaseAvailable && (
                 <button 
-                  onClick={() => window.open('http://localhost:3003/api/apis', '_blank')}
+                  onClick={() => window.open('http://localhost:3002/api/apis', '_blank')}
                   className="px-2 py-1 bg-white bg-opacity-50 rounded text-xs hover:bg-opacity-75 transition-colors"
                 >
                   View API Data
