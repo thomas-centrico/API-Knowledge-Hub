@@ -1,0 +1,23 @@
+{
+  "name": "api-knowledge-hub-db-setup",
+  "version": "1.0.0",
+  "description": "Database setup utilities for API Knowledge Hub",
+  "main": "setup_database.js",
+  "scripts": {
+    "setup-db": "node setup_database.js",
+    "test-db": "node test_database.js"
+  },
+  "dependencies": {
+    "fs": "^0.0.1-security",
+    "path": "^0.12.7",
+    "sqlite3": "^5.1.7"
+  },
+  "keywords": [
+    "sqlite",
+    "database",
+    "api",
+    "knowledge-hub"
+  ],
+  "author": "API Knowledge Hub Team",
+  "license": "MIT"
+}
