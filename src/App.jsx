@@ -30,6 +30,23 @@ const AppContent = () => {
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
+  // Check URL parameters for direct API view (e.g., ?view=RGDC_REST_001)
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const viewApiId = urlParams.get('view');
+    
+    if (viewApiId && apis.length > 0) {
+      const apiToView = apis.find(api => api.id === viewApiId);
+      if (apiToView) {
+        console.log('Loading API from URL parameter:', apiToView);
+        setDetailViewAPI(apiToView);
+        setSelectedAPI(apiToView);
+      } else {
+        console.warn('API not found with ID:', viewApiId);
+      }
+    }
+  }, [apis, setDetailViewAPI, setSelectedAPI]);
+
   const handleSearch = (query) => {
     const newFilters = { ...searchFilters, query };
     setFilters(newFilters);

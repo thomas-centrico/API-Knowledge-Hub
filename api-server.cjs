@@ -1,11 +1,7 @@
-﻿import express from 'express';
-import sqlite3 from 'sqlite3';
-import cors from 'cors';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+﻿const express = require('express');
+const sqlite3 = require('sqlite3').verbose();
+const cors = require('cors');
+const path = require('path');
 
 const app = express();
 const PORT = 3002; // Backend API port
@@ -15,8 +11,8 @@ const DB_PATH = 'C:\\Users\\gbs02099\\OneDrive - Sella\\Documents\\2025\\Hack\\A
 app.use(cors());
 app.use(express.json());
 
-// Database connection
-const db = new sqlite3.verbose().Database(DB_PATH, (err) => {
+// Database connection  
+const db = new sqlite3.Database(DB_PATH, (err) => {
     if (err) {
         console.error('❌ Error connecting to database:', err.message);
         console.error('Database path attempted:', DB_PATH);

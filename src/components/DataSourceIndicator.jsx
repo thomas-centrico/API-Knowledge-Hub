@@ -8,7 +8,8 @@ const DataSourceIndicator = () => {
     apis, 
     switchToDatabase, 
     switchToStatic, 
-    checkDatabaseAvailability 
+    checkDatabaseAvailability,
+    forceReloadFromDatabase 
   } = useAPI();
   
   const [lastChecked, setLastChecked] = useState(null);
@@ -137,6 +138,24 @@ const DataSourceIndicator = () => {
               >
                 {isChecking ? 'Checking...' : 'Refresh'}
               </button>
+              {dataSource === 'static' && (
+                <button 
+                  onClick={async () => {
+                    setIsChecking(true);
+                    const success = await forceReloadFromDatabase();
+                    if (success) {
+                      alert('Successfully switched to database! 🎉');
+                    } else {
+                      alert('Database not available. Please ensure the backend server is running on port 3002.');
+                    }
+                    setIsChecking(false);
+                  }}
+                  disabled={isChecking}
+                  className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs hover:bg-green-200 transition-colors disabled:opacity-50"
+                >
+                  Load from Database
+                </button>
+              )}
               {databaseAvailable && (
                 <button 
                   onClick={() => window.open('http://localhost:3002/api/apis', '_blank')}

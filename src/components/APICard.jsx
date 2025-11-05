@@ -1,9 +1,6 @@
 import React from 'react';
 import { 
   ExternalLink, 
-  Clock, 
-  Users, 
-  TrendingUp, 
   AlertCircle,
   CheckCircle,
   AlertTriangle,
@@ -51,15 +48,6 @@ const getTypeColor = (type) => {
     default:
       return 'bg-gray-100 text-gray-800';
   }
-};
-
-const formatNumber = (num) => {
-  if (num >= 1000000) {
-    return (num / 1000000).toFixed(1) + 'M';
-  } else if (num >= 1000) {
-    return (num / 1000).toFixed(1) + 'K';
-  }
-  return num.toString();
 };
 
 export const APICard = ({ 
@@ -124,39 +112,6 @@ export const APICard = ({
       <p className="text-gray-600 text-sm mb-4 line-clamp-3">
         {api.description}
       </p>
-
-      {/* Metrics */}
-      <div className="grid grid-cols-3 gap-4 mb-4">
-        <div className="flex items-center space-x-2">
-          <TrendingUp className="w-4 h-4 text-green-500" />
-          <div>
-            <p className="text-xs text-gray-500">Requests/Day</p>
-            <p className="text-sm font-semibold text-gray-900">
-              {formatNumber(api.usage?.requestsPerDay || 0)}
-            </p>
-          </div>
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          <Clock className="w-4 h-4 text-blue-500" />
-          <div>
-            <p className="text-xs text-gray-500">Response</p>
-            <p className="text-sm font-semibold text-gray-900">
-              {api.technical?.responseTime || 0}ms
-            </p>
-          </div>
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          <Users className="w-4 h-4 text-purple-500" />
-          <div>
-            <p className="text-xs text-gray-500">Users</p>
-            <p className="text-sm font-semibold text-gray-900">
-              {api.usage?.uniqueUsers || 0}
-            </p>
-          </div>
-        </div>
-      </div>
 
       {/* Tags */}
       <div className="flex flex-wrap gap-1 mb-4">

@@ -140,7 +140,7 @@ try {
 function transformRow(row) {
   if (!row) return null;
   
-  return {
+  const api = {
     id: row.ID,
     name: row.NAME,
     type: row.TYPE,
@@ -152,22 +152,57 @@ function transformRow(row) {
     department: row.DEPARTMENT,
     lastUpdated: row.LAST_UPDATED,
     createdAt: row.CREATED_AT,
-    endpoints: row.ENDPOINTS || 0,
-    baseUrl: row.BASE_URL,
-    authMethod: row.AUTH_METHOD,
-    rateLimit: row.RATE_LIMIT,
-    slaUptime: row.SLA_UPTIME,
-    responseTime: row.RESPONSE_TIME,
-    docUrl: row.DOC_URL,
-    hasInteractiveDocs: row.HAS_INTERACTIVE_DOCS === 'true' || row.HAS_INTERACTIVE_DOCS === '1',
-    contactEmail: row.CONTACT_EMAIL,
-    contactTeam: row.CONTACT_TEAM,
-    slackChannel: row.SLACK_CHANNEL,
+    // Documentation
+    documentation: {
+      url: row.DOC_URL || '',
+      hasInteractiveDocs: row.HAS_INTERACTIVE_DOCS === 'true' || row.HAS_INTERACTIVE_DOCS === '1',
+    },
+    // Contact
+    contact: {
+      email: row.CONTACT_EMAIL || '',
+      team: row.CONTACT_TEAM || '',
+      slackChannel: row.SLACK_CHANNEL || '',
+    },
+    // Technical details - base fields
+    technical: {
+      baseUrl: row.BASE_URL || '',
+      authMethod: row.AUTH_METHOD || '',
+      rateLimit: row.RATE_LIMIT || '',
+      slaUptime: row.SLA_UPTIME || 99.9,
+      responseTime: row.RESPONSE_TIME || 0,
+    },
+    // Sample data - use appropriate columns based on API type
+    sampleRequest: (row.TYPE === 'ORACLE_API' || row.TYPE === 'JAVA_API')
+      ? (row.SAMPLE_CALL_TEXT || '')
+      : (row.SAMPLE_REQUEST_JSON ? JSON.parse(row.SAMPLE_REQUEST_JSON) : {}),
+    sampleResponse: (row.TYPE === 'ORACLE_API' || row.TYPE === 'JAVA_API')
+      ? (row.SAMPLE_RESULT_TEXT || '')
+      : (row.SAMPLE_RESPONSE_JSON ? JSON.parse(row.SAMPLE_RESPONSE_JSON) : {}),
     // Add missing fields required by frontend
     tags: [],
     dependencies: [],
     dependents: [],
+    usage: {
+      requestsPerDay: 0,
+      uniqueUsers: 0,
+    },
   };
+  
+  // Add type-specific technical fields
+  if (row.TYPE === 'REST_API') {
+    api.technical.endpoint = row.ENDPOINT || '';
+    api.technical.method = row.METHOD || 'GET';
+    api.technical.contentType = row.CONTENT_TYPE || 'application/json';
+  } else if (row.TYPE === 'JAVA_API') {
+    api.technical.packageName = row.PACKAGE_NAME || '';
+    api.technical.className = row.CLASS_NAME || '';
+    api.technical.methodName = row.METHOD_NAME || '';
+    api.technical.interfaceName = row.INTERFACE_NAME || '';
+    api.technical.apiSignature = row.API_SIGNATURE || '';
+  }
+  // Note: ORACLE_API specific columns not in current schema
+  
+  return api;
 }
 
 /**
@@ -305,22 +340,20 @@ app.post('/api/apis', (req, res) => {
       return res.status(409).json({ error: 'API with this ID already exists' });
     }
     
-    // Insert API
-    const insertStmt = db.prepare(`
+    // Insert API - Build dynamic query based on API type
+    const technical = apiData.technical || {};
+    const documentation = apiData.documentation || {};
+    const contact = apiData.contact || {};
+    
+    let insertQuery = `
       INSERT INTO API_METADATA (
         ID, NAME, TYPE, CATEGORY, STATUS, VERSION, DESCRIPTION,
         OWNER, DEPARTMENT, LAST_UPDATED, CREATED_AT,
         BASE_URL, AUTH_METHOD, RATE_LIMIT, SLA_UPTIME, RESPONSE_TIME,
         DOC_URL, HAS_INTERACTIVE_DOCS,
-        CONTACT_EMAIL, CONTACT_TEAM, SLACK_CHANNEL
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
+        CONTACT_EMAIL, CONTACT_TEAM, SLACK_CHANNEL`;
     
-    const technical = apiData.technical || {};
-    const documentation = apiData.documentation || {};
-    const contact = apiData.contact || {};
-    
-    insertStmt.run(
+    let params = [
       apiData.id,
       apiData.name,
       apiData.type,
@@ -342,7 +375,53 @@ app.post('/api/apis', (req, res) => {
       contact.email || '',
       contact.team || '',
       contact.slackChannel || ''
-    );
+    ];
+    
+    // Add sample data columns based on API type
+    if (apiData.type === 'ORACLE_API' || apiData.type === 'JAVA_API') {
+      insertQuery += `,
+        SAMPLE_CALL_TEXT, SAMPLE_RESULT_TEXT`;
+      params.push(
+        typeof apiData.sampleRequest === 'string' ? apiData.sampleRequest : JSON.stringify(apiData.sampleRequest || ''),
+        typeof apiData.sampleResponse === 'string' ? apiData.sampleResponse : JSON.stringify(apiData.sampleResponse || '')
+      );
+    } else {
+      insertQuery += `,
+        SAMPLE_REQUEST_JSON, SAMPLE_RESPONSE_JSON`;
+      params.push(
+        apiData.sampleRequest ? JSON.stringify(apiData.sampleRequest) : null,
+        apiData.sampleResponse ? JSON.stringify(apiData.sampleResponse) : null
+      );
+    }
+    
+    // Add type-specific fields
+    if (apiData.type === 'REST_API') {
+      insertQuery += `,
+        ENDPOINT, METHOD, CONTENT_TYPE`;
+      params.push(
+        technical.endpoint || '',
+        technical.method || 'GET',
+        technical.contentType || 'application/json'
+      );
+    } else if (apiData.type === 'JAVA_API') {
+      insertQuery += `,
+        PACKAGE_NAME, CLASS_NAME, METHOD_NAME, INTERFACE_NAME, API_SIGNATURE`;
+      params.push(
+        technical.packageName || '',
+        technical.className || '',
+        technical.methodName || '',
+        technical.interfaceName || '',
+        technical.apiSignature || ''
+      );
+    }
+    
+    // Close the INSERT query with placeholders
+    insertQuery += `) VALUES (${params.map(() => '?').join(', ')})`;
+    
+    // Note: ORACLE_API specific columns not in schema
+    
+    const insertStmt = db.prepare(insertQuery);
+    insertStmt.run(...params);
     
     // Insert tags
     if (apiData.tags && apiData.tags.length > 0) {
@@ -395,14 +474,24 @@ app.put('/api/apis/:id', (req, res) => {
     const { id } = req.params;
     const apiData = req.body;
     
+    console.log('📥 PUT /api/apis/' + id + ' - Received data:');
+    console.log('  Type:', apiData.type);
+    console.log('  Technical:', JSON.stringify(apiData.technical, null, 2));
+    console.log('  Has sampleRequest:', !!apiData.sampleRequest);
+    console.log('  Has sampleResponse:', !!apiData.sampleResponse);
+    
     // Check if API exists
     const existingStmt = db.prepare('SELECT ID FROM API_METADATA WHERE ID = ?');
     if (!existingStmt.get(id)) {
       return res.status(404).json({ error: 'API not found' });
     }
     
-    // Update API
-    const updateStmt = db.prepare(`
+    // Update API - Build dynamic query based on API type
+    const technical = apiData.technical || {};
+    const documentation = apiData.documentation || {};
+    const contact = apiData.contact || {};
+    
+    let updateQuery = `
       UPDATE API_METADATA SET
         NAME = ?,
         TYPE = ?,
@@ -422,15 +511,9 @@ app.put('/api/apis/:id', (req, res) => {
         HAS_INTERACTIVE_DOCS = ?,
         CONTACT_EMAIL = ?,
         CONTACT_TEAM = ?,
-        SLACK_CHANNEL = ?
-      WHERE ID = ?
-    `);
+        SLACK_CHANNEL = ?`;
     
-    const technical = apiData.technical || {};
-    const documentation = apiData.documentation || {};
-    const contact = apiData.contact || {};
-    
-    updateStmt.run(
+    let params = [
       apiData.name,
       apiData.type,
       apiData.category,
@@ -449,9 +532,74 @@ app.put('/api/apis/:id', (req, res) => {
       documentation.hasInteractiveDocs ? 'true' : 'false',
       contact.email || '',
       contact.team || '',
-      contact.slackChannel || '',
-      id
-    );
+      contact.slackChannel || ''
+    ];
+    
+    // Add sample data based on API type
+    if (apiData.type === 'ORACLE_API' || apiData.type === 'JAVA_API') {
+      // Oracle and Java APIs use plain text columns
+      updateQuery += `,
+        SAMPLE_CALL_TEXT = ?,
+        SAMPLE_RESULT_TEXT = ?,
+        SAMPLE_REQUEST_JSON = NULL,
+        SAMPLE_RESPONSE_JSON = NULL`;
+      params.push(
+        typeof apiData.sampleRequest === 'string' ? apiData.sampleRequest : JSON.stringify(apiData.sampleRequest || ''),
+        typeof apiData.sampleResponse === 'string' ? apiData.sampleResponse : JSON.stringify(apiData.sampleResponse || '')
+      );
+    } else {
+      // REST APIs use JSON columns
+      updateQuery += `,
+        SAMPLE_REQUEST_JSON = ?,
+        SAMPLE_RESPONSE_JSON = ?,
+        SAMPLE_CALL_TEXT = NULL,
+        SAMPLE_RESULT_TEXT = NULL`;
+      params.push(
+        apiData.sampleRequest ? JSON.stringify(apiData.sampleRequest) : null,
+        apiData.sampleResponse ? JSON.stringify(apiData.sampleResponse) : null
+      );
+    }
+    
+    // Add type-specific fields
+    if (apiData.type === 'REST_API') {
+      updateQuery += `,
+        ENDPOINT = ?,
+        METHOD = ?,
+        CONTENT_TYPE = ?`;
+      params.push(
+        technical.endpoint || '',
+        technical.method || 'GET',
+        technical.contentType || 'application/json'
+      );
+    } else if (apiData.type === 'JAVA_API') {
+      updateQuery += `,
+        PACKAGE_NAME = ?,
+        CLASS_NAME = ?,
+        METHOD_NAME = ?,
+        INTERFACE_NAME = ?,
+        API_SIGNATURE = ?`;
+      params.push(
+        technical.packageName || '',
+        technical.className || '',
+        technical.methodName || '',
+        technical.interfaceName || '',
+        technical.apiSignature || ''
+      );
+    }
+    // Note: ORACLE_API specific columns not in schema
+    
+    updateQuery += ' WHERE ID = ?';
+    params.push(id);
+    
+    console.log('💾 Executing UPDATE with params:');
+    console.log('  ENDPOINT:', technical.endpoint);
+    console.log('  METHOD:', technical.method);
+    console.log('  CONTENT_TYPE:', technical.contentType);
+    console.log('  SAMPLE_REQUEST_JSON length:', apiData.sampleRequest ? JSON.stringify(apiData.sampleRequest).length : 0);
+    console.log('  SAMPLE_RESPONSE_JSON length:', apiData.sampleResponse ? JSON.stringify(apiData.sampleResponse).length : 0);
+    
+    const updateStmt = db.prepare(updateQuery);
+    updateStmt.run(...params);
     
     // Update tags - delete old and insert new
     db.prepare('DELETE FROM API_TAGS WHERE API_ID = ?').run(id);

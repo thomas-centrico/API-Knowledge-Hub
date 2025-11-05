@@ -412,6 +412,31 @@ export const APIProvider = ({ children }) => {
       const result = await fetchAPIsFromDatabase();
       return result !== null;
     },
+    
+    // Force reload from database (useful when database becomes available)
+    forceReloadFromDatabase: async () => {
+      dispatch({ type: 'SET_LOADING', payload: true });
+      console.log('🔄 Force reloading from database...');
+      
+      try {
+        const databaseResult = await fetchAPIsFromDatabase();
+        
+        if (databaseResult) {
+          dispatch({ type: 'SET_DATA_SOURCE', payload: 'database' });
+          dispatch({ type: 'SET_APIS', payload: databaseResult.apis });
+          initializeSearch(databaseResult.apis);
+          console.log('✅ Successfully loaded from database:', databaseResult.apis.length, 'APIs');
+          return true;
+        } else {
+          console.log('❌ Database still not available');
+          return false;
+        }
+      } catch (error) {
+        console.error('Error force reloading from database:', error);
+        dispatch({ type: 'SET_ERROR', payload: 'Failed to reload from database' });
+        return false;
+      }
+    },
   };
 
   const value = {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, Save, X, Search } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, Search, Eye, ExternalLink } from 'lucide-react';
 import { useAPI } from '../contexts/APIContext';
 
 const AdminPanel = () => {
@@ -8,6 +8,7 @@ const AdminPanel = () => {
   const [editingAPI, setEditingAPI] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState(getEmptyForm());
+  const [notification, setNotification] = useState(null);
 
   function getEmptyForm() {
     return {
@@ -46,7 +47,8 @@ const AdminPanel = () => {
         // JAVA API fields
         packageName: '',
         className: '',
-        interface: '',
+        methodName: '',
+        interfaceName: '',
         apiSignature: '',
         // ORACLE API fields
         connectionString: '',
@@ -95,9 +97,13 @@ const AdminPanel = () => {
           ...emptyForm.contact,
           ...(api.contact || {})
         },
-        // Handle JSON properties safely
-        sampleRequest: JSON.stringify(api.sampleRequest || {}, null, 2),
-        sampleResponse: JSON.stringify(api.sampleResponse || {}, null, 2),
+        // Handle JSON properties safely - Oracle APIs use plain text, others use JSON
+        sampleRequest: (api.type === 'ORACLE_API' || api.type === 'JAVA_API')
+          ? (typeof api.sampleRequest === 'string' ? api.sampleRequest : JSON.stringify(api.sampleRequest || {}, null, 2))
+          : JSON.stringify(api.sampleRequest || {}, null, 2),
+        sampleResponse: (api.type === 'ORACLE_API' || api.type === 'JAVA_API')
+          ? (typeof api.sampleResponse === 'string' ? api.sampleResponse : JSON.stringify(api.sampleResponse || {}, null, 2))
+          : JSON.stringify(api.sampleResponse || {}, null, 2),
       });
     } else {
       setEditingAPI(null);
@@ -132,18 +138,41 @@ const AdminPanel = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
-      // Parse JSON fields
-      const sampleRequest = formData.sampleRequest ? JSON.parse(formData.sampleRequest) : {};
-      const sampleResponse = formData.sampleResponse ? JSON.parse(formData.sampleResponse) : {};
+      // Handle sample request/response based on API type
+      let sampleRequest = {};
+      let sampleResponse = {};
+      
+      if (formData.type === 'ORACLE_API' || formData.type === 'JAVA_API') {
+        // Oracle and Java APIs store as plain text
+        sampleRequest = formData.sampleRequest || '';
+        sampleResponse = formData.sampleResponse || '';
+      } else {
+        // REST APIs store as JSON objects
+        if (formData.sampleRequest && formData.sampleRequest.trim()) {
+          try {
+            sampleRequest = JSON.parse(formData.sampleRequest);
+          } catch (err) {
+            throw new Error('Invalid JSON in Sample Request: ' + err.message);
+          }
+        }
+        
+        if (formData.sampleResponse && formData.sampleResponse.trim()) {
+          try {
+            sampleResponse = JSON.parse(formData.sampleResponse);
+          } catch (err) {
+            throw new Error('Invalid JSON in Sample Response: ' + err.message);
+          }
+        }
+      }
 
       // Process arrays
-      const tags = formData.tags.split(',').map(t => t.trim()).filter(t => t);
-      const dependencies = formData.dependencies.split(',').map(t => t.trim()).filter(t => t);
-      const dependents = formData.dependents.split(',').map(t => t.trim()).filter(t => t);
+      const tags = formData.tags ? formData.tags.split(',').map(t => t.trim()).filter(t => t) : [];
+      const dependencies = formData.dependencies ? formData.dependencies.split(',').map(t => t.trim()).filter(t => t) : [];
+      const dependents = formData.dependents ? formData.dependents.split(',').map(t => t.trim()).filter(t => t) : [];
 
       const apiData = {
         ...formData,
@@ -153,32 +182,65 @@ const AdminPanel = () => {
         sampleRequest,
         sampleResponse,
         usage: {
-          requestsPerDay: parseInt(formData.usage.requestsPerDay) || 0,
-          uniqueUsers: parseInt(formData.usage.uniqueUsers) || 0,
+          requestsPerDay: parseInt(formData.usage?.requestsPerDay) || 0,
+          uniqueUsers: parseInt(formData.usage?.uniqueUsers) || 0,
         },
         technical: {
           ...formData.technical,
-          responseTime: parseInt(formData.technical.responseTime) || 0,
-          slaUptime: parseFloat(formData.technical.slaUptime) || 99.9,
+          responseTime: parseInt(formData.technical?.responseTime) || 0,
+          slaUptime: parseFloat(formData.technical?.slaUptime) || 99.9,
         },
       };
 
+      console.log('📤 Submitting API data:', {
+        id: apiData.id,
+        name: apiData.name,
+        type: apiData.type,
+        technical: apiData.technical,
+        hasSampleRequest: (formData.type === 'ORACLE_API' || formData.type === 'JAVA_API')
+          ? !!sampleRequest 
+          : Object.keys(sampleRequest).length > 0,
+        hasSampleResponse: (formData.type === 'ORACLE_API' || formData.type === 'JAVA_API')
+          ? !!sampleResponse
+          : Object.keys(sampleResponse).length > 0,
+      });
+
       if (editingAPI) {
-        updateAPI(apiData);
+        await updateAPI(apiData);
+        showNotification('success', `API "${apiData.name}" updated successfully!`);
       } else {
-        addAPI(apiData);
+        await addAPI(apiData);
+        showNotification('success', `API "${apiData.name}" created successfully!`);
       }
 
       handleCloseForm();
     } catch (error) {
-      alert('Error saving API: ' + error.message);
+      console.error('❌ Error in handleSubmit:', error);
+      showNotification('error', 'Error saving API: ' + error.message);
     }
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm('Are you sure you want to delete this API?')) {
-      deleteAPI(id);
+  const showNotification = (type, message) => {
+    setNotification({ type, message });
+    setTimeout(() => setNotification(null), 5000);
+  };
+
+  const handleDelete = async (id) => {
+    const api = apis.find(a => a.id === id);
+    if (window.confirm(`Are you sure you want to delete "${api?.name || id}"?`)) {
+      try {
+        await deleteAPI(id);
+        showNotification('success', `API "${api?.name || id}" deleted successfully!`);
+      } catch (error) {
+        showNotification('error', 'Error deleting API: ' + error.message);
+      }
     }
+  };
+
+  const handleViewDetails = (apiId) => {
+    // Open API details in a new window
+    const detailsUrl = `${window.location.origin}/?view=${apiId}`;
+    window.open(detailsUrl, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
   };
 
   const filteredAPIs = apis.filter(api =>
@@ -189,8 +251,38 @@ const AdminPanel = () => {
 
   return (
     <div className="max-w-7xl mx-auto p-6">
+      {/* Notification Toast */}
+      {notification && (
+        <div className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg flex items-center space-x-3 animate-slide-in ${
+          notification.type === 'success' 
+            ? 'bg-green-600 text-white' 
+            : 'bg-red-600 text-white'
+        }`}>
+          <div className="flex-shrink-0">
+            {notification.type === 'success' ? (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+              </svg>
+            ) : (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            )}
+          </div>
+          <div className="flex-1">
+            <p className="font-medium">{notification.message}</p>
+          </div>
+          <button 
+            onClick={() => setNotification(null)}
+            className="flex-shrink-0 ml-4 hover:opacity-75 transition-opacity"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      )}
+
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">API Admin Panel</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">API Knowledge Hub - Admin Panel</h1>
         <p className="text-gray-600">Manage API entries, add new APIs, and update existing ones</p>
       </div>
 
@@ -237,12 +329,19 @@ const AdminPanel = () => {
               {filteredAPIs.map((api) => (
                 <tr key={api.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 max-w-xs">
-                    <div className="text-sm font-medium text-gray-900 truncate" title={api.name}>
-                      {api.name}
-                    </div>
-                    <div className="text-sm text-gray-500 truncate" title={api.id}>
-                      {api.id}
-                    </div>
+                    <button
+                      onClick={() => handleViewDetails(api.id)}
+                      className="text-left w-full group"
+                      title="Click to view details"
+                    >
+                      <div className="text-sm font-medium text-gray-900 truncate group-hover:text-blue-600 group-hover:underline flex items-center gap-1">
+                        {api.name}
+                        <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                      <div className="text-sm text-gray-500 truncate" title={api.id}>
+                        {api.id}
+                      </div>
+                    </button>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -270,6 +369,13 @@ const AdminPanel = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{api.version}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button
+                      onClick={() => handleViewDetails(api.id)}
+                      className="text-green-600 hover:text-green-900 mr-3"
+                      title="View API Details"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
                     <button
                       onClick={() => handleOpenForm(api)}
                       className="text-blue-600 hover:text-blue-900 mr-3"
@@ -550,8 +656,8 @@ const AdminPanel = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-1">Method *</label>
                       <input
                         type="text"
-                        name="technical.method"
-                        value={formData.technical.method}
+                        name="technical.methodName"
+                        value={formData.technical.methodName}
                         onChange={handleInputChange}
                         required
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -562,8 +668,8 @@ const AdminPanel = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-1">Interface</label>
                       <input
                         type="text"
-                        name="technical.interface"
-                        value={formData.technical.interface}
+                        name="technical.interfaceName"
+                        value={formData.technical.interfaceName}
                         onChange={handleInputChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         placeholder="IService"
@@ -584,262 +690,7 @@ const AdminPanel = () => {
                 </div>
               )}
 
-              {/* Technical Details - ORACLE API */}
-              {formData.type === 'ORACLE_API' && (
-                <>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Oracle API Technical Details</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Base URL *</label>
-                        <input
-                          type="text"
-                          name="technical.baseUrl"
-                          value={formData.technical.baseUrl}
-                          onChange={handleInputChange}
-                          required
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="oracle://db.company.com:1521/PROD"
-                        />
-                      </div>
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">JDBC Connection String *</label>
-                        <input
-                          type="text"
-                          name="technical.connectionString"
-                          value={formData.technical.connectionString}
-                          onChange={handleInputChange}
-                          required
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="jdbc:oracle:thin:@db.company.com:1521:PROD"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Schema Name *</label>
-                        <input
-                          type="text"
-                          name="technical.schemaName"
-                          value={formData.technical.schemaName}
-                          onChange={handleInputChange}
-                          required
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="CORE_SCHEMA"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Procedure/Package Name *</label>
-                        <input
-                          type="text"
-                          name="technical.procedureName"
-                          value={formData.technical.procedureName}
-                          onChange={handleInputChange}
-                          required
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="PKG_CORE.SP_PROCEDURE"
-                        />
-                      </div>
-                    </div>
-                  </div>
 
-                  {/* Oracle API Core Metadata */}
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Core Metadata</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Owning Project</label>
-                        <input
-                          type="text"
-                          name="owningProject"
-                          value={formData.owningProject || ''}
-                          onChange={handleInputChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Banking Core System"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Interface Type</label>
-                        <input
-                          type="text"
-                          name="interfaceType"
-                          value={formData.interfaceType || ''}
-                          onChange={handleInputChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="PL/SQL Function"
-                        />
-                      </div>
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Business Function</label>
-                        <textarea
-                          name="businessFunction"
-                          value={formData.businessFunction || ''}
-                          onChange={handleInputChange}
-                          rows="2"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Description of business process this API supports"
-                        />
-                      </div>
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Technology Stack</label>
-                        <input
-                          type="text"
-                          name="technologyStack"
-                          value={formData.technologyStack || ''}
-                          onChange={handleInputChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Oracle PL/SQL, WebLogic Server"
-                        />
-                      </div>
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Consumer Projects (comma-separated)</label>
-                        <input
-                          type="text"
-                          name="consumerProjects"
-                          value={formData.consumerProjects?.join(', ') || ''}
-                          onChange={(e) => handleInputChange({
-                            target: {
-                              name: 'consumerProjects',
-                              value: e.target.value.split(',').map(s => s.trim()).filter(Boolean)
-                            }
-                          })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Payment Gateway, Account Management, Wire Transfer"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Environments */}
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Environments</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Development URL</label>
-                        <input
-                          type="text"
-                          name="environments.dev"
-                          value={formData.environments?.dev || ''}
-                          onChange={handleInputChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="jdbc:oracle:thin:@dev-server:1521:DEV"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">QA URL</label>
-                        <input
-                          type="text"
-                          name="environments.qa"
-                          value={formData.environments?.qa || ''}
-                          onChange={handleInputChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="jdbc:oracle:thin:@qa-server:1521:QA"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">UAT URL</label>
-                        <input
-                          type="text"
-                          name="environments.uat"
-                          value={formData.environments?.uat || ''}
-                          onChange={handleInputChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="jdbc:oracle:thin:@uat-server:1521:UAT"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Production URL</label>
-                        <input
-                          type="text"
-                          name="environments.prod"
-                          value={formData.environments?.prod || ''}
-                          onChange={handleInputChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="jdbc:oracle:thin:@prod-server:1521:PROD"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Note for additional fields */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <p className="text-sm text-blue-800">
-                      <strong>Note:</strong> Additional Oracle API metadata fields (Authentication Details, Input/Output Specifications, 
-                      Functional Behavior, Versioning, Performance, Monitoring, Consumer Guidelines, Support) can be added by editing 
-                      the API data in sampleData.js or through future admin panel enhancements.
-                    </p>
-                  </div>
-                </>
-              )}
-
-              {/* Common Technical Fields */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance & Authentication</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Auth Method *</label>
-                    <input
-                      type="text"
-                      name="technical.authMethod"
-                      value={formData.technical.authMethod}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="OAuth 2.0, API Key, etc."
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Response Time (ms)</label>
-                    <input
-                      type="number"
-                      name="technical.responseTime"
-                      value={formData.technical.responseTime}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="100"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">SLA Uptime (%)</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      name="technical.slaUptime"
-                      value={formData.technical.slaUptime}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="99.9"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Usage Statistics */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Usage Statistics</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Requests Per Day</label>
-                    <input
-                      type="number"
-                      name="usage.requestsPerDay"
-                      value={formData.usage.requestsPerDay}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="10000"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Unique Users</label>
-                    <input
-                      type="number"
-                      name="usage.uniqueUsers"
-                      value={formData.usage.uniqueUsers}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="250"
-                    />
-                  </div>
-                </div>
-              </div>
 
               {/* Contact Information */}
               <div>
@@ -942,28 +793,46 @@ const AdminPanel = () => {
 
               {/* Sample Request/Response */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Sample Data (JSON format)</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  {(formData.type === 'ORACLE_API' || formData.type === 'JAVA_API') ? 'Sample Call & Result' : 'Sample Data (JSON format)'}
+                </h3>
                 <div className="grid grid-cols-1 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Sample Request</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {(formData.type === 'ORACLE_API' || formData.type === 'JAVA_API') ? 'Sample Call' : 'Sample Request'}
+                    </label>
                     <textarea
                       name="sampleRequest"
                       value={formData.sampleRequest}
                       onChange={handleInputChange}
                       rows="6"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
-                      placeholder='{"key": "value"}'
+                      placeholder={
+                        (formData.type === 'ORACLE_API' || formData.type === 'JAVA_API')
+                          ? formData.type === 'ORACLE_API' 
+                            ? 'EXECUTE PKG_CORE.SP_PROCEDURE(param1, param2);'
+                            : 'MyClass.myMethod(param1, param2);'
+                          : '{"key": "value"}'
+                      }
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Sample Response</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {(formData.type === 'ORACLE_API' || formData.type === 'JAVA_API') ? 'Sample Result' : 'Sample Response'}
+                    </label>
                     <textarea
                       name="sampleResponse"
                       value={formData.sampleResponse}
                       onChange={handleInputChange}
                       rows="6"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
-                      placeholder='{"success": true, "data": {}}'
+                      placeholder={
+                        (formData.type === 'ORACLE_API' || formData.type === 'JAVA_API')
+                          ? formData.type === 'ORACLE_API'
+                            ? 'Result: SUCCESS\nRows affected: 1\nExecution time: 45ms'
+                            : 'Return value: User{id=123, name="John"}\nExecution time: 25ms'
+                          : '{"success": true, "data": {}}'
+                      }
                     />
                   </div>
                 </div>
