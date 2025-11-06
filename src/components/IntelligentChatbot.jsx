@@ -691,20 +691,22 @@ Need help finding something specific?`;
                   e.stopPropagation();
                   toggleMinimize();
                 }}
-                className="w-8 h-8 hover:bg-white/10 rounded-lg flex items-center justify-center transition-colors hover:bg-white/20"
+                className="w-8 h-8 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors"
                 aria-label={isMinimized ? 'Maximize chat' : 'Minimize chat'}
               >
                 {isMinimized ? <Maximize2 className="w-5 h-5" /> : <Minimize2 className="w-5 h-5" />}
               </button>
+              {/* Close button - prominently styled in RED */}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   closeChat();
                 }}
-                className="w-8 h-8 hover:bg-white/10 rounded-lg flex items-center justify-center transition-colors hover:bg-red-500/30"
+                className="w-9 h-9 bg-red-500 hover:bg-red-600 rounded-lg flex items-center justify-center transition-all shadow-lg hover:shadow-xl ml-1"
                 aria-label="Close chat"
+                title="Close chatbot"
               >
-                <X className="w-5 h-5" />
+                <X className="w-6 h-6 font-bold" strokeWidth={3} />
               </button>
             </div>
           </div>
