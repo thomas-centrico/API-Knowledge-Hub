@@ -10,7 +10,7 @@ import {
   ConversationHeader
 } from '@chatscope/chat-ui-kit-react';
 import '@chatscope/chat-ui-kit-styles/dist/default/styles.min.css';
-import { MessageCircle, X, Minimize2, Maximize2, Sparkles } from 'lucide-react';
+import { MessageCircle, X, Minimize2, Maximize2, Sparkles, Move } from 'lucide-react';
 import { useAPI } from '../contexts/APIContext.jsx';
 import aiService from '../lib/aiService.js';
 
@@ -22,6 +22,11 @@ const IntelligentChatbot = () => {
   const [typing, setTyping] = useState(false);
   const [useAI, setUseAI] = useState(false);
   const [aiReady, setAiReady] = useState(false);
+  
+  // Draggable state
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
   // Initialize AI service and set API context
   useEffect(() => {
@@ -529,6 +534,57 @@ Need help finding something specific?`;
     setIsMinimized(false);
   };
 
+  // Dragging handlers
+  const handleMouseDown = (e) => {
+    // Only allow dragging from header area, not from buttons
+    if (e.target.closest('button')) return;
+    
+    setIsDragging(true);
+    setDragStart({
+      x: e.clientX - position.x,
+      y: e.clientY - position.y
+    });
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging) return;
+    
+    const newX = e.clientX - dragStart.x;
+    const newY = e.clientY - dragStart.y;
+    
+    // Keep window within viewport bounds
+    const maxX = window.innerWidth - 320; // 320px is w-80
+    const maxY = window.innerHeight - (isMinimized ? 64 : 500);
+    
+    setPosition({
+      x: Math.max(-window.innerWidth + 320, Math.min(newX, maxX)),
+      y: Math.max(-window.innerHeight + (isMinimized ? 64 : 500), Math.min(newY, maxY))
+    });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  // Add mouse move and mouse up listeners
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging, dragStart, position]);
+
+  // Reset position when chat is closed
+  useEffect(() => {
+    if (!isOpen) {
+      setPosition({ x: 0, y: 0 });
+    }
+  }, [isOpen]);
+
   return (
     <>
       {/* Floating Chat Button */}
@@ -553,16 +609,28 @@ Need help finding something specific?`;
 
       {/* AI Chat Interface */}
       {isOpen && (
-        <div className={`fixed bottom-6 right-6 w-80 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 transition-all duration-300 ${
-          isMinimized ? 'h-16' : 'h-[500px]'
-        }`}>
-          {/* Custom Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-t-2xl">
+        <div 
+          className={`fixed w-80 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 ${
+            isMinimized ? 'h-16' : 'h-[500px]'
+          } ${isDragging ? 'cursor-move' : ''}`}
+          style={{
+            bottom: position.y === 0 ? '1.5rem' : 'auto',
+            right: position.x === 0 ? '1.5rem' : 'auto',
+            top: position.y !== 0 ? `calc(50vh + ${position.y}px - ${isMinimized ? '32px' : '250px'})` : 'auto',
+            left: position.x !== 0 ? `calc(50vw + ${position.x}px - 160px)` : 'auto',
+            transition: isDragging ? 'none' : 'all 0.3s'
+          }}
+        >
+          {/* Custom Header - Draggable */}
+          <div 
+            className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-t-2xl cursor-move"
+            onMouseDown={handleMouseDown}
+          >
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
                 {useAI && aiReady ? <Sparkles className="w-6 h-6 animate-pulse" /> : <MessageCircle className="w-6 h-6" />}
               </div>
-              <div>
+              <div className="flex-1">
                 <h3 className="font-semibold flex items-center gap-2">
                   API Intelligence Assistant
                   {useAI && aiReady && (
@@ -571,8 +639,9 @@ Need help finding something specific?`;
                     </span>
                   )}
                 </h3>
-                <p className="text-xs text-blue-100">
-                  {useAI && aiReady ? '� Enhanced Natural Language' : 'Rule-based'} • {apis.length} APIs
+                <p className="text-xs text-blue-100 flex items-center gap-1">
+                  <Move className="w-3 h-3" />
+                  {useAI && aiReady ? '🧠 Enhanced Natural Language' : 'Rule-based'} • {apis.length} APIs
                 </p>
               </div>
             </div>
