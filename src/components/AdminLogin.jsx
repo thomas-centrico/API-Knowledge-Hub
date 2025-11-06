@@ -114,18 +114,6 @@ const AdminLogin = ({ onLogin }) => {
               )}
             </button>
           </form>
-
-          {/* Info Box */}
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
-            <p className="text-xs text-blue-800">
-              <strong>Default Credentials:</strong><br />
-              Username: admin<br />
-              Password: admin123
-            </p>
-            <p className="text-xs text-blue-600 mt-2">
-              ⚠️ Please change these credentials in production
-            </p>
-          </div>
         </div>
       </div>
     </div>

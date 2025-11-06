@@ -527,8 +527,8 @@ Need help finding something specific?`;
 
       {/* AI Chat Interface */}
       {isOpen && (
-        <div className={`fixed bottom-6 right-6 w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 transition-all duration-300 ${
-          isMinimized ? 'h-16' : 'h-[600px]'
+        <div className={`fixed bottom-6 right-6 w-80 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 transition-all duration-300 ${
+          isMinimized ? 'h-16' : 'h-[500px]'
         }`}>
           {/* Custom Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-t-2xl">
@@ -578,7 +578,7 @@ Need help finding something specific?`;
 
           {/* Chat Interface */}
           {!isMinimized && (
-            <div style={{ height: "520px" }}>
+            <div style={{ height: "420px" }}>
               <MainContainer>
                 <ChatContainer>
                   <MessageList 

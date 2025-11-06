@@ -325,11 +325,22 @@ const AdminPanel = () => {
         </div>
       )}
 
-      <div className="mb-6">
+      {/* Header with Logo */}
+      <div className="mb-6 bg-white rounded-lg shadow-md border border-gray-200 p-6">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">API Knowledge Hub - Admin Panel</h1>
-            <p className="text-gray-600">Manage API entries, add new APIs, and update existing ones</p>
+          <div className="flex items-center space-x-4">
+            {/* Logo */}
+            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" className="w-8 h-8">
+                <circle cx="50" cy="50" r="45" fill="white" opacity="0.3"/>
+                <text x="50" y="65" textAnchor="middle" fill="white" fontSize="50" fontWeight="bold">A</text>
+              </svg>
+            </div>
+            {/* Title */}
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">API Knowledge Hub</h1>
+              <p className="text-gray-600 mt-1">Admin Panel - Manage API entries, add new APIs, and update existing ones</p>
+            </div>
           </div>
           <div className="flex items-center space-x-3">
             {/* Back to Home Button */}
