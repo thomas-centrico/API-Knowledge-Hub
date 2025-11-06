@@ -38,18 +38,23 @@ const IntelligentChatbot = () => {
     const welcomeMessage = {
       message: `🚀 Welcome to ${aiReady ? '**AI-Powered**' : ''} API Intelligence Assistant! 
 
-I have comprehensive knowledge of all ${apis.length} APIs in your catalog including their specifications, dependencies, usage patterns, and integration details.
+I have comprehensive knowledge of all **${apis.length} APIs** in your catalog including their specifications, dependencies, usage patterns, and integration details.
 
-${aiReady ? '✨ **Enhanced with OpenAI**: I can now understand natural language and provide more intelligent, context-aware responses!\n\n' : ''}
+${aiReady ? `✨ **Enhanced with Advanced NLU (Natural Language Understanding):**
+• Understand complex, conversational queries
+• Remember context from our conversation
+• Provide intent-aware, personalized responses
+• Extract key requirements from vague questions
+• Offer proactive suggestions and clarifications
 
-Ask me anything like:
-• "Tell me about the Payment Gateway API"
-• "Which APIs are used for authentication?"
-• "Show me deprecated APIs"
-• "What are the dependencies of User Management API?"
-• "Find APIs in the Finance department"
+` : ''}**Ask me naturally, like you would a colleague:**
+• "I need something for payments" → I'll find payment APIs
+• "What's better for authentication: API A or B?" → I'll compare them
+• "How do I integrate the User API?" → Step-by-step guidance
+• "Show me fast APIs used by Finance" → Filtered, smart results
+• "APIs similar to the one we just discussed" → Context-aware search
 
-I can also help you navigate, filter, and switch between different views. How can I assist you today?`,
+${aiReady ? '💬 **Pro Tip:** I remember our conversation, so you can ask follow-up questions naturally!\n\n' : ''}How can I help you discover the perfect API today?`,
       sentTime: "just now",
       sender: "assistant",
       direction: "incoming"
@@ -73,8 +78,13 @@ I can also help you navigate, filter, and switch between different views. How ca
       let response;
       
       if (useAI && aiReady) {
-        // Use OpenAI for intelligent responses
-        response = await aiService.chat(message);
+        // Use Enhanced NLU for intelligent, context-aware responses
+        response = await aiService.chatWithIntent(message);
+        
+        // Add typing indicator based on response complexity
+        if (response.length > 300) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
       } else {
         // Fallback to rule-based responses
         response = generateIntelligentResponse(message);
@@ -88,6 +98,22 @@ I can also help you navigate, filter, and switch between different views. How ca
       };
       
       setMessages(prev => [...prev, assistantMessage]);
+
+      // Generate follow-up suggestions for AI mode
+      if (useAI && aiReady && Math.random() > 0.7) {
+        const suggestions = aiService.generateFollowUpQuestions();
+        if (suggestions.length > 0) {
+          const suggestionMessage = {
+            message: `💡 **You might also want to ask:**\n${suggestions.slice(0, 2).map(s => `• ${s}`).join('\n')}`,
+            sentTime: "just now",
+            sender: "assistant",
+            direction: "incoming"
+          };
+          setTimeout(() => {
+            setMessages(prev => [...prev, suggestionMessage]);
+          }, 1000);
+        }
+      }
     } catch (error) {
       console.error('Error processing message:', error);
       const errorMessage = {
@@ -540,24 +566,43 @@ Need help finding something specific?`;
                 <h3 className="font-semibold flex items-center gap-2">
                   API Intelligence Assistant
                   {useAI && aiReady && (
-                    <span className="text-xs bg-yellow-400 text-yellow-900 px-2 py-0.5 rounded-full font-bold">AI</span>
+                    <span className="text-xs bg-yellow-400 text-yellow-900 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                      <Sparkles className="w-3 h-3" /> NLU
+                    </span>
                   )}
                 </h3>
                 <p className="text-xs text-blue-100">
-                  {useAI && aiReady ? '🤖 AI-Powered' : 'Rule-based'} • {apis.length} APIs
+                  {useAI && aiReady ? '� Enhanced Natural Language' : 'Rule-based'} • {apis.length} APIs
                 </p>
               </div>
             </div>
             <div className="flex items-center space-x-2">
               {aiReady && (
-                <button
-                  onClick={() => setUseAI(!useAI)}
-                  className="px-3 py-1 text-xs bg-white/20 hover:bg-white/30 rounded-lg transition-colors flex items-center gap-1"
-                  title={useAI ? 'Switch to rule-based mode' : 'Switch to AI mode'}
-                >
-                  <Sparkles className="w-3 h-3" />
-                  {useAI ? 'AI On' : 'AI Off'}
-                </button>
+                <>
+                  <button
+                    onClick={() => {
+                      aiService.clearHistory();
+                      setMessages([{
+                        message: "🔄 Conversation cleared! Starting fresh. How can I help you?",
+                        sentTime: "just now",
+                        sender: "assistant",
+                        direction: "incoming"
+                      }]);
+                    }}
+                    className="px-2 py-1 text-xs bg-white/20 hover:bg-white/30 rounded-lg transition-colors"
+                    title="Clear conversation history"
+                  >
+                    🔄
+                  </button>
+                  <button
+                    onClick={() => setUseAI(!useAI)}
+                    className="px-3 py-1 text-xs bg-white/20 hover:bg-white/30 rounded-lg transition-colors flex items-center gap-1"
+                    title={useAI ? 'Switch to rule-based mode' : 'Switch to AI mode'}
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    {useAI ? 'AI On' : 'AI Off'}
+                  </button>
+                </>
               )}
               <button
                 onClick={toggleMinimize}
