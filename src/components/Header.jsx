@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Grid3X3, List, RefreshCw, Settings, Shield } from 'lucide-react';
+import { Search, Grid3X3, List, RefreshCw, Shield } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAPI } from '../contexts/APIContext.jsx';
 import BrainNetwork from './icons/BrainNetwork.jsx';
@@ -147,14 +147,6 @@ export const Header = ({ onSearch }) => {
                 <RefreshCw className="w-4 h-4" />
               </button>
             )}
-
-            {/* Settings Button */}
-            <button
-              className="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
-              title="Settings"
-            >
-              <Settings className="w-4 h-4" />
-            </button>
           </div>
         </div>
 

@@ -107,7 +107,7 @@ const DataSourceIndicator = () => {
   };
 
   return (
-    <div className="fixed top-4 right-4 z-50">
+    <div className="fixed bottom-4 right-4 z-50">
       <div className={`px-4 py-2 rounded-lg shadow-lg border ${getStatusColor()}`}>
         <div className="flex items-center space-x-2">
           <span className="text-lg">{getStatusIcon()}</span>

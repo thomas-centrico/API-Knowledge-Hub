@@ -1,14 +1,25 @@
-import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, Save, X, Search, Eye, ExternalLink } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Edit2, Trash2, Save, X, Search, Eye, ExternalLink, RefreshCw, ArrowLeft, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAPI } from '../contexts/APIContext';
+import AdminLogin from './AdminLogin';
 
 const AdminPanel = () => {
-  const { apis, addAPI, updateAPI, deleteAPI } = useAPI();
+  const { apis, addAPI, updateAPI, deleteAPI, refreshAPIs, loading } = useAPI();
+  const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingAPI, setEditingAPI] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState(getEmptyForm());
   const [notification, setNotification] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Check authentication on mount
+  useEffect(() => {
+    const authenticated = sessionStorage.getItem('adminAuthenticated') === 'true';
+    setIsAuthenticated(authenticated);
+  }, []);
 
   function getEmptyForm() {
     return {
@@ -214,6 +225,9 @@ const AdminPanel = () => {
       }
 
       handleCloseForm();
+      
+      // Refresh the API list to show updated data
+      await refreshAPIs();
     } catch (error) {
       console.error('❌ Error in handleSubmit:', error);
       showNotification('error', 'Error saving API: ' + error.message);
@@ -225,12 +239,37 @@ const AdminPanel = () => {
     setTimeout(() => setNotification(null), 5000);
   };
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refreshAPIs();
+      showNotification('success', 'API list refreshed successfully!');
+    } catch (error) {
+      showNotification('error', 'Failed to refresh API list');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const handleLogout = () => {
+    sessionStorage.removeItem('adminAuthenticated');
+    sessionStorage.removeItem('adminUser');
+    setIsAuthenticated(false);
+    showNotification('success', 'Logged out successfully');
+  };
+
+  const handleBackToHome = () => {
+    navigate('/');
+  };
+
   const handleDelete = async (id) => {
     const api = apis.find(a => a.id === id);
     if (window.confirm(`Are you sure you want to delete "${api?.name || id}"?`)) {
       try {
         await deleteAPI(id);
         showNotification('success', `API "${api?.name || id}" deleted successfully!`);
+        // Refresh the API list after deletion
+        await refreshAPIs();
       } catch (error) {
         showNotification('error', 'Error deleting API: ' + error.message);
       }
@@ -248,6 +287,11 @@ const AdminPanel = () => {
     api.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
     api.department.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Show login page if not authenticated
+  if (!isAuthenticated) {
+    return <AdminLogin onLogin={() => setIsAuthenticated(true)} />;
+  }
 
   return (
     <div className="max-w-7xl mx-auto p-6">
@@ -282,8 +326,46 @@ const AdminPanel = () => {
       )}
 
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">API Knowledge Hub - Admin Panel</h1>
-        <p className="text-gray-600">Manage API entries, add new APIs, and update existing ones</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">API Knowledge Hub - Admin Panel</h1>
+            <p className="text-gray-600">Manage API entries, add new APIs, and update existing ones</p>
+          </div>
+          <div className="flex items-center space-x-3">
+            {/* Back to Home Button */}
+            <button
+              onClick={handleBackToHome}
+              className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              title="Back to Home"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Home</span>
+            </button>
+            
+            {/* Refresh Button */}
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing || loading}
+              className={`flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                isRefreshing || loading ? 'animate-pulse' : ''
+              }`}
+              title="Refresh API List"
+            >
+              <RefreshCw className={`w-4 h-4 ${isRefreshing || loading ? 'animate-spin' : ''}`} />
+              <span>{isRefreshing || loading ? 'Refreshing...' : 'Refresh'}</span>
+            </button>
+
+            {/* Logout Button */}
+            <button
+              onClick={handleLogout}
+              className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              title="Logout"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Logout</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Action Bar */}
