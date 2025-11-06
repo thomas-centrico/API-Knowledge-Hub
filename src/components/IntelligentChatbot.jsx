@@ -536,9 +536,18 @@ Need help finding something specific?`;
 
   // Dragging handlers
   const handleMouseDown = (e) => {
-    // Only allow dragging from header area, not from buttons
-    if (e.target.closest('button')) return;
+    // Only allow dragging from header area, not from buttons or interactive elements
+    const target = e.target;
+    if (
+      target.tagName === 'BUTTON' || 
+      target.closest('button') ||
+      target.tagName === 'INPUT' ||
+      target.closest('input')
+    ) {
+      return; // Don't start dragging if clicking on buttons or inputs
+    }
     
+    e.preventDefault(); // Prevent text selection while dragging
     setIsDragging(true);
     setDragStart({
       x: e.clientX - position.x,
@@ -649,7 +658,8 @@ Need help finding something specific?`;
               {aiReady && (
                 <>
                   <button
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       aiService.clearHistory();
                       setMessages([{
                         message: "🔄 Conversation cleared! Starting fresh. How can I help you?",
@@ -664,7 +674,10 @@ Need help finding something specific?`;
                     🔄
                   </button>
                   <button
-                    onClick={() => setUseAI(!useAI)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setUseAI(!useAI);
+                    }}
                     className="px-3 py-1 text-xs bg-white/20 hover:bg-white/30 rounded-lg transition-colors flex items-center gap-1"
                     title={useAI ? 'Switch to rule-based mode' : 'Switch to AI mode'}
                   >
@@ -674,15 +687,21 @@ Need help finding something specific?`;
                 </>
               )}
               <button
-                onClick={toggleMinimize}
-                className="w-8 h-8 hover:bg-white/10 rounded-lg flex items-center justify-center transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleMinimize();
+                }}
+                className="w-8 h-8 hover:bg-white/10 rounded-lg flex items-center justify-center transition-colors hover:bg-white/20"
                 aria-label={isMinimized ? 'Maximize chat' : 'Minimize chat'}
               >
                 {isMinimized ? <Maximize2 className="w-5 h-5" /> : <Minimize2 className="w-5 h-5" />}
               </button>
               <button
-                onClick={closeChat}
-                className="w-8 h-8 hover:bg-white/10 rounded-lg flex items-center justify-center transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  closeChat();
+                }}
+                className="w-8 h-8 hover:bg-white/10 rounded-lg flex items-center justify-center transition-colors hover:bg-red-500/30"
                 aria-label="Close chat"
               >
                 <X className="w-5 h-5" />
