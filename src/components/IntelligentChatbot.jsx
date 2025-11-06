@@ -10,8 +10,9 @@ import {
   ConversationHeader
 } from '@chatscope/chat-ui-kit-react';
 import '@chatscope/chat-ui-kit-styles/dist/default/styles.min.css';
-import { MessageCircle, X, Minimize2, Maximize2 } from 'lucide-react';
+import { MessageCircle, X, Minimize2, Maximize2, Sparkles } from 'lucide-react';
 import { useAPI } from '../contexts/APIContext.jsx';
+import aiService from '../lib/aiService.js';
 
 const IntelligentChatbot = () => {
   const { apis, filteredApis, searchFilters, viewMode, setViewMode, setFilters, setSelectedAPI, setDetailViewAPI } = useAPI();
@@ -19,13 +20,27 @@ const IntelligentChatbot = () => {
   const [isMinimized, setIsMinimized] = useState(false);
   const [messages, setMessages] = useState([]);
   const [typing, setTyping] = useState(false);
+  const [useAI, setUseAI] = useState(false);
+  const [aiReady, setAiReady] = useState(false);
+
+  // Initialize AI service and set API context
+  useEffect(() => {
+    if (apis.length > 0) {
+      aiService.setAPIContext(apis);
+      const ready = aiService.initialize();
+      setAiReady(ready);
+      setUseAI(ready); // Auto-enable AI if available
+    }
+  }, [apis]);
 
   // Initialize with welcome message
   useEffect(() => {
     const welcomeMessage = {
-      message: `🚀 Welcome to API Intelligence Assistant! 
+      message: `🚀 Welcome to ${aiReady ? '**AI-Powered**' : ''} API Intelligence Assistant! 
 
 I have comprehensive knowledge of all ${apis.length} APIs in your catalog including their specifications, dependencies, usage patterns, and integration details.
+
+${aiReady ? '✨ **Enhanced with OpenAI**: I can now understand natural language and provide more intelligent, context-aware responses!\n\n' : ''}
 
 Ask me anything like:
 • "Tell me about the Payment Gateway API"
@@ -41,9 +56,9 @@ I can also help you navigate, filter, and switch between different views. How ca
     };
     
     setMessages([welcomeMessage]);
-  }, [apis.length]);
+  }, [apis.length, aiReady]);
 
-  const processMessage = (message) => {
+  const processMessage = async (message) => {
     const userMessage = {
       message,
       sentTime: "just now", 
@@ -54,9 +69,17 @@ I can also help you navigate, filter, and switch between different views. How ca
     setMessages(prev => [...prev, userMessage]);
     setTyping(true);
 
-    // Simulate processing delay for more natural feel
-    setTimeout(() => {
-      const response = generateIntelligentResponse(message);
+    try {
+      let response;
+      
+      if (useAI && aiReady) {
+        // Use OpenAI for intelligent responses
+        response = await aiService.chat(message);
+      } else {
+        // Fallback to rule-based responses
+        response = generateIntelligentResponse(message);
+      }
+
       const assistantMessage = {
         message: response,
         sentTime: "just now",
@@ -65,8 +88,18 @@ I can also help you navigate, filter, and switch between different views. How ca
       };
       
       setMessages(prev => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error('Error processing message:', error);
+      const errorMessage = {
+        message: "I apologize, but I encountered an error processing your request. Please try again.",
+        sentTime: "just now",
+        sender: "assistant",
+        direction: "incoming"
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
       setTyping(false);
-    }, 1200);
+    }
   };
 
   const generateIntelligentResponse = (query) => {
@@ -501,14 +534,31 @@ Need help finding something specific?`;
           <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-t-2xl">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                <MessageCircle className="w-6 h-6" />
+                {useAI && aiReady ? <Sparkles className="w-6 h-6 animate-pulse" /> : <MessageCircle className="w-6 h-6" />}
               </div>
               <div>
-                <h3 className="font-semibold">API Intelligence Assistant</h3>
-                <p className="text-xs text-blue-100">Knows all {apis.length} APIs • Real-time insights</p>
+                <h3 className="font-semibold flex items-center gap-2">
+                  API Intelligence Assistant
+                  {useAI && aiReady && (
+                    <span className="text-xs bg-yellow-400 text-yellow-900 px-2 py-0.5 rounded-full font-bold">AI</span>
+                  )}
+                </h3>
+                <p className="text-xs text-blue-100">
+                  {useAI && aiReady ? '🤖 AI-Powered' : 'Rule-based'} • {apis.length} APIs
+                </p>
               </div>
             </div>
             <div className="flex items-center space-x-2">
+              {aiReady && (
+                <button
+                  onClick={() => setUseAI(!useAI)}
+                  className="px-3 py-1 text-xs bg-white/20 hover:bg-white/30 rounded-lg transition-colors flex items-center gap-1"
+                  title={useAI ? 'Switch to rule-based mode' : 'Switch to AI mode'}
+                >
+                  <Sparkles className="w-3 h-3" />
+                  {useAI ? 'AI On' : 'AI Off'}
+                </button>
+              )}
               <button
                 onClick={toggleMinimize}
                 className="w-8 h-8 hover:bg-white/10 rounded-lg flex items-center justify-center transition-colors"
