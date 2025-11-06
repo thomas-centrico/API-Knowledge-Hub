@@ -3,17 +3,8 @@
  * Handles chatbot conversations and API-related queries
  */
 
-// Note: Install openai package when network is available
-// Run: npm install openai
-
-let OpenAI;
-try {
-  // Dynamic import to handle if package is not installed yet
-  const openaiModule = await import('openai');
-  OpenAI = openaiModule.default;
-} catch (error) {
-  console.warn('OpenAI package not installed. Run: npm install openai');
-}
+// Import OpenAI - will be handled gracefully if not installed
+import OpenAI from 'openai';
 
 class AIService {
   constructor() {
@@ -26,16 +17,11 @@ class AIService {
   /**
    * Initialize OpenAI client with API key
    */
-  initialize() {
+  async initialize() {
     const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
     
     if (!apiKey || apiKey === 'your_openai_api_key_here') {
       console.warn('OpenAI API key not configured. Please add VITE_OPENAI_API_KEY to your .env file');
-      return false;
-    }
-
-    if (!OpenAI) {
-      console.error('OpenAI package not available. Run: npm install openai');
       return false;
     }
 
@@ -59,24 +45,48 @@ class AIService {
    */
   setAPIContext(apis) {
     this.apiContext = apis;
+    // Debug: Log API count and check for technical data
+    if (apis.length > 0) {
+      console.log(`✅ AI Service: Loaded ${apis.length} APIs`);
+      const firstApi = apis[0];
+      console.log('📋 Sample API structure:', {
+        name: firstApi.name,
+        hasTechnical: !!firstApi.technical,
+        hasEndpoint: !!(firstApi.technical?.endpoint || firstApi.endpoint),
+        hasBaseUrl: !!(firstApi.technical?.baseUrl || firstApi.baseUrl)
+      });
+    }
   }
 
   /**
    * Build enhanced system prompt with API context
    */
   getSystemPrompt() {
-    // Create comprehensive API catalog
-    const apiCatalog = this.apiContext.map(api => ({
-      id: api.id,
-      name: api.name,
-      type: api.type,
-      description: api.description,
-      category: api.category,
-      department: api.department,
-      status: api.status,
-      tags: api.tags?.join(', ') || '',
-      dependencies: api.dependencies?.join(', ') || 'none'
-    }));
+    // Create comprehensive API catalog with COMPLETE details
+    const apiCatalog = this.apiContext.map(api => {
+      const details = {
+        id: api.id,
+        name: api.name,
+        type: api.type,
+        description: api.description,
+        category: api.category,
+        department: api.department,
+        status: api.status,
+        version: api.version
+      };
+      
+      // Add endpoint/baseUrl information from technical object or direct properties
+      const technical = api.technical || {};
+      if (technical.endpoint || api.endpoint) details.endpoint = technical.endpoint || api.endpoint;
+      if (technical.baseUrl || api.baseUrl) details.baseUrl = technical.baseUrl || api.baseUrl;
+      if (technical.authMethod || api.authMethod) details.authMethod = technical.authMethod || api.authMethod;
+      if (technical.contentType || api.contentType) details.contentType = technical.contentType || api.contentType;
+      if (technical.method || api.method) details.method = technical.method || api.method;
+      if (api.tags) details.tags = Array.isArray(api.tags) ? api.tags.join(', ') : api.tags;
+      if (api.dependencies) details.dependencies = Array.isArray(api.dependencies) ? api.dependencies.join(', ') : api.dependencies;
+      
+      return details;
+    });
 
     // Group APIs by category for better context
     const categories = [...new Set(this.apiContext.map(api => api.category))];
@@ -85,63 +95,31 @@ class AIService {
       return `${cat}: ${count} APIs`;
     }).join(', ');
 
-    return `You are an advanced AI assistant for the API Knowledge Hub - an intelligent API discovery and integration platform. You have deep understanding of natural language and can interpret user intent with high accuracy.
+    return `You are an API Knowledge Hub assistant with access to ${this.apiContext.length} APIs. 
 
-## Your Enhanced Capabilities:
+**CRITICAL RULES:**
+1. ALWAYS search the API list below for matches BEFORE asking clarification
+2. When user asks about an API (e.g., "RGDC API", "payment API"), search by name/description and provide ALL details immediately
+3. DO NOT ask "what does X stand for" if you find matching APIs - just provide them
+4. Be direct and helpful - provide endpoint, baseUrl, and other details when found
 
-### 1. Natural Language Understanding
-- Understand complex, conversational queries
-- Handle ambiguous or vague questions intelligently
-- Recognize user intent (search, compare, integrate, troubleshoot, learn)
-- Extract key entities and requirements from queries
-- Understand context from previous conversations
+**COMPLETE API DATABASE:**
+${apiCatalog.map(api => {
+  let info = `**${api.name}** | ${api.type} | ${api.department}\n`;
+  info += `Description: ${api.description}`;
+  if (api.baseUrl) info += `\nBase URL: ${api.baseUrl}`;
+  if (api.endpoint) info += `\nEndpoint: ${api.endpoint}`;
+  if (api.method) info += `\nMethod: ${api.method}`;
+  if (api.authMethod) info += `\nAuth: ${api.authMethod}`;
+  if (api.contentType) info += `\nContent-Type: ${api.contentType}`;
+  return info;
+}).join('\n\n')}
 
-### 2. API Knowledge Base
-Total APIs: ${this.apiContext.length}
-Categories: ${categoryBreakdown}
-
-Sample APIs:
-${apiCatalog.slice(0, 8).map(api => 
-  `• ${api.name} (${api.type.replace('_', ' ')}) - ${api.category}
-    ${api.description}
-    Tags: ${api.tags || 'N/A'} | Status: ${api.status}`
-).join('\n')}
-
-### 3. Smart Query Interpretation Examples:
-- "I need something for payments" → Identify payment-related APIs
-- "APIs used by Finance team" → Filter by department
-- "Fast authentication" → Consider both auth category AND performance
-- "What's better: API A or B?" → Provide detailed comparison
-- "How do I integrate X?" → Provide step-by-step guidance
-
-### 4. Response Strategy:
-- **Direct Questions**: Provide specific, factual answers
-- **Vague Queries**: Ask clarifying questions or provide top options
-- **Comparison Requests**: Create structured comparisons
-- **Integration Help**: Offer practical implementation guidance
-- **Troubleshooting**: Diagnose issues and suggest solutions
-
-### 5. Response Format Guidelines:
-- Use **bold** for emphasis on API names and key points
-- Use bullet points (•) for lists
-- Include relevant metrics (version, status, performance)
-- Suggest related or alternative APIs when appropriate
-- Be conversational yet professional
-- Keep responses concise but informative (2-4 paragraphs max)
-
-### 6. Context Awareness:
-- Remember previous questions in the conversation
-- Build upon earlier topics
-- Reference APIs discussed before
-- Maintain conversation coherence
-
-### 7. Intelligent Behaviors:
-- If user asks about non-existent API, suggest closest matches
-- Proactively mention important details (deprecation, dependencies)
-- Warn about compatibility or integration challenges
-- Recommend best practices
-
-Always prioritize user needs and provide actionable information. Be helpful, accurate, and engaging.`;
+**HOW TO RESPOND:**
+- Search the API list above by name, description, or keywords
+- Provide direct answers with all details (endpoint, URL, auth, etc.)
+- Only ask for clarification if NO matches found
+- Be concise and helpful`;
   }
 
   /**
@@ -151,7 +129,7 @@ Always prioritize user needs and provide actionable information. Be helpful, acc
    */
   async chat(userMessage) {
     if (!this.isInitialized) {
-      const initialized = this.initialize();
+      const initialized = await this.initialize();
       if (!initialized) {
         return "I'm sorry, but the AI chatbot is not configured yet. Please add your OpenAI API key to the .env file.";
       }
@@ -178,11 +156,11 @@ Always prioritize user needs and provide actionable information. Be helpful, acc
         ...this.conversationHistory
       ];
 
-      // Call OpenAI API
+      // Call OpenAI API with GPT-4o (most advanced model)
       const completion = await this.client.chat.completions.create({
-        model: import.meta.env.VITE_OPENAI_MODEL || 'gpt-3.5-turbo',
+        model: import.meta.env.VITE_OPENAI_MODEL || 'gpt-4o',
         messages: messages,
-        temperature: 0.7,
+        temperature: 0.2,
         max_tokens: 500,
         presence_penalty: 0.6,
         frequency_penalty: 0.3
@@ -228,9 +206,9 @@ Always prioritize user needs and provide actionable information. Be helpful, acc
     }
 
     try {
-      // Use AI to understand search intent
+      // Use AI to understand search intent with GPT-4o
       const completion = await this.client.chat.completions.create({
-        model: 'gpt-3.5-turbo',
+        model: 'gpt-4o',
         messages: [{
           role: 'system',
           content: 'Extract search keywords and API type from user query. Return JSON: {keywords: [], type: "REST_API|JAVA_API|ORACLE_API|null", intent: "search|integrate|learn"}'
@@ -281,7 +259,7 @@ Always prioritize user needs and provide actionable information. Be helpful, acc
       ).join('\n');
 
       const completion = await this.client.chat.completions.create({
-        model: 'gpt-3.5-turbo',
+        model: 'gpt-4o',
         messages: [{
           role: 'system',
           content: `You are an API recommendation expert. Based on user needs, recommend the most relevant APIs from this list:\n\n${apiList}\n\nReturn JSON array: [{apiId: number, reason: string, confidence: "high|medium|low"}]`
@@ -303,7 +281,7 @@ Always prioritize user needs and provide actionable information. Be helpful, acc
   }
 
   /**
-   * Enhanced Natural Language Understanding - Extract user intent and entities
+   * Enhanced Natural Language Understanding - Extract intent and entities  
    * @param {string} query - User's natural language query
    * @returns {Promise<Object>} - Structured intent analysis
    */
@@ -314,10 +292,10 @@ Always prioritize user needs and provide actionable information. Be helpful, acc
 
     try {
       const completion = await this.client.chat.completions.create({
-        model: 'gpt-3.5-turbo',
+        model: 'gpt-4o',
         messages: [{
           role: 'system',
-          content: `Analyze the user's query and extract structured information. Return JSON with:
+          content: `Analyze the query and extract structured information. Return JSON with:
 {
   "intent": "search|compare|integrate|troubleshoot|learn|general",
   "entities": {
@@ -330,8 +308,8 @@ Always prioritize user needs and provide actionable information. Be helpful, acc
   },
   "sentiment": "positive|neutral|negative|urgent",
   "complexity": "simple|moderate|complex",
-  "needsClarification": boolean,
-  "suggestedClarification": "question to ask user if needsClarification is true"
+  "needsClarification": true,
+  "suggestedClarification": "clarification question string or null"
 }`
         }, {
           role: 'user',
@@ -391,19 +369,11 @@ Always prioritize user needs and provide actionable information. Be helpful, acc
    * @returns {Promise<string>} - AI response
    */
   async chatWithIntent(userMessage) {
-    // First analyze the intent
-    const intentAnalysis = await this.analyzeIntent(userMessage);
+    // Skip intent analysis for now - go directly to answering
+    // The GPT-4o model with complete API context is smart enough
     
-    // If clarification needed, ask for it
-    if (intentAnalysis.needsClarification && intentAnalysis.suggestedClarification) {
-      return `🤔 ${intentAnalysis.suggestedClarification}`;
-    }
-
-    // Enhance the response based on intent
-    const enhancedContext = this.buildEnhancedContext(intentAnalysis);
-    
-    // Use regular chat with enhanced context
-    return this.chat(userMessage, enhancedContext);
+    // Use regular chat with all API context already in system prompt
+    return this.chat(userMessage, '');
   }
 
   /**
@@ -413,15 +383,15 @@ Always prioritize user needs and provide actionable information. Be helpful, acc
     const { intent, entities } = intentAnalysis;
     let contextAddition = '';
 
-    // Add relevant APIs to context based on entities
-    if (entities.apiTypes.length > 0) {
+    // Add relevant APIs to context based on entities (with null checks)
+    if (entities && entities.apiTypes && entities.apiTypes.length > 0) {
       const relevantAPIs = this.apiContext.filter(api => 
         entities.apiTypes.includes(api.type)
       );
       contextAddition += `\nFocus on ${entities.apiTypes.join(' and ')} APIs. `;
     }
 
-    if (entities.categories.length > 0) {
+    if (entities && entities.categories && entities.categories.length > 0) {
       contextAddition += `User is interested in ${entities.categories.join(', ')} categories. `;
     }
 
@@ -479,9 +449,9 @@ Always prioritize user needs and provide actionable information. Be helpful, acc
         ...this.conversationHistory
       ];
 
-      // Call OpenAI API
+      // Call OpenAI API with GPT-4o for superior accuracy
       const completion = await this.client.chat.completions.create({
-        model: import.meta.env.VITE_OPENAI_MODEL || 'gpt-3.5-turbo',
+        model: import.meta.env.VITE_OPENAI_MODEL || 'gpt-4o',
         messages: messages,
         temperature: 0.7,
         max_tokens: 600,

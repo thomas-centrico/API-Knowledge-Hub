@@ -30,12 +30,15 @@ const IntelligentChatbot = () => {
 
   // Initialize AI service and set API context
   useEffect(() => {
-    if (apis.length > 0) {
-      aiService.setAPIContext(apis);
-      const ready = aiService.initialize();
-      setAiReady(ready);
-      setUseAI(ready); // Auto-enable AI if available
-    }
+    const initializeAI = async () => {
+      if (apis.length > 0) {
+        aiService.setAPIContext(apis);
+        const ready = await aiService.initialize();
+        setAiReady(ready);
+        setUseAI(ready); // Auto-enable AI if available
+      }
+    };
+    initializeAI();
   }, [apis]);
 
   // Initialize with welcome message
