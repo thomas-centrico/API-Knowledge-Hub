@@ -143,29 +143,6 @@ export const FilterSidebar = ({
               ))}
             </div>
           </div>
-
-          {/* Popular Tags */}
-          <div className="bg-gradient-to-br from-white/80 to-pink-50/80 backdrop-blur-sm p-4 rounded-lg border border-pink-200/50 shadow-md hover:shadow-lg transition-all duration-300">
-            <h3 className="text-sm font-semibold text-blue-900 mb-3 flex items-center">
-              <span className="w-2 h-2 bg-gradient-to-r from-pink-500 to-pink-600 rounded-full mr-2"></span>
-              Popular Tags
-            </h3>
-            <div className="space-y-2">
-              {Object.entries(facets.tags).map(([tag, count]) => (
-                <label key={tag} className="flex items-center group cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={filters.tags.includes(tag)}
-                    onChange={() => toggleArrayFilter('tags', tag)}
-                    className="rounded border-blue-200 text-pink-600 focus:ring-pink-500 focus:ring-2"
-                  />
-                  <span className="ml-2 text-sm text-blue-800 group-hover:text-blue-900 transition-colors">
-                    {tag} <span className="text-pink-600 font-medium">({count})</span>
-                  </span>
-                </label>
-              ))}
-            </div>
-          </div>
         </div>
         </div>
       </div>
@@ -298,29 +275,6 @@ export const FilterSidebar = ({
                     />
                     <span className="ml-2 text-sm text-blue-800 group-hover:text-blue-900 transition-colors">
                       {department} <span className="text-cyan-600 font-medium">({count})</span>
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Popular Tags */}
-            <div className="mb-6 bg-gradient-to-br from-pink-50/80 to-white/80 p-4 rounded-lg border border-pink-200/50 shadow-sm">
-              <h3 className="text-sm font-semibold text-blue-900 mb-3 flex items-center">
-                <span className="w-2 h-2 bg-gradient-to-r from-pink-500 to-pink-600 rounded-full mr-2"></span>
-                Popular Tags
-              </h3>
-              <div className="space-y-2">
-                {Object.entries(facets.tags).map(([tag, count]) => (
-                  <label key={tag} className="flex items-center group cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={filters.tags.includes(tag)}
-                      onChange={() => toggleArrayFilter('tags', tag)}
-                      className="rounded border-blue-200 text-pink-600 focus:ring-pink-500 focus:ring-2"
-                    />
-                    <span className="ml-2 text-sm text-blue-800 group-hover:text-blue-900 transition-colors">
-                      {tag} <span className="text-pink-600 font-medium">({count})</span>
                     </span>
                   </label>
                 ))}

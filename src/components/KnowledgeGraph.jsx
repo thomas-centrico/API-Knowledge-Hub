@@ -14,9 +14,9 @@ export const KnowledgeGraph = ({
   const [hoveredLink, setHoveredLink] = useState(null);
   const [showNodeLabels, setShowNodeLabels] = useState(true);
   const [showRelationshipTypes, setShowRelationshipTypes] = useState({
-    [RELATIONSHIP_TYPES.DEPENDS_ON]: true,
-    [RELATIONSHIP_TYPES.USED_BY]: true,
-    [RELATIONSHIP_TYPES.SAME_CATEGORY]: true,
+    [RELATIONSHIP_TYPES.DEPENDS_ON]: false,
+    [RELATIONSHIP_TYPES.USED_BY]: false,
+    [RELATIONSHIP_TYPES.SAME_CATEGORY]: false,
     [RELATIONSHIP_TYPES.SAME_DEPARTMENT]: false,
     [RELATIONSHIP_TYPES.COMMON_TAGS]: false,
   });

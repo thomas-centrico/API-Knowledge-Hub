@@ -188,6 +188,17 @@ function transformRow(row) {
     },
   };
   
+  // Fetch dependencies and dependents from database
+  try {
+    const deps = db.prepare('SELECT DEPENDS_ON_ID FROM API_DEPENDENCIES WHERE API_ID = ?').all(row.ID);
+    api.dependencies = deps.map(d => d.DEPENDS_ON_ID);
+    
+    const dependents = db.prepare('SELECT DEPENDENT_ID FROM API_DEPENDENTS WHERE API_ID = ?').all(row.ID);
+    api.dependents = dependents.map(d => d.DEPENDENT_ID);
+  } catch (err) {
+    console.error('Error fetching dependencies for', row.ID, ':', err.message);
+  }
+  
   // Add type-specific technical fields
   if (row.TYPE === 'REST_API') {
     api.technical.endpoint = row.ENDPOINT || '';
@@ -433,7 +444,7 @@ app.post('/api/apis', (req, res) => {
     
     // Insert dependencies
     if (apiData.dependencies && apiData.dependencies.length > 0) {
-      const depStmt = db.prepare('INSERT OR IGNORE INTO API_DEPENDENCIES (API_ID, DEPENDS_ON) VALUES (?, ?)');
+      const depStmt = db.prepare('INSERT OR IGNORE INTO API_DEPENDENCIES (API_ID, DEPENDS_ON_ID) VALUES (?, ?)');
       for (const dep of apiData.dependencies) {
         depStmt.run(apiData.id, dep);
       }
@@ -441,7 +452,7 @@ app.post('/api/apis', (req, res) => {
     
     // Insert dependents
     if (apiData.dependents && apiData.dependents.length > 0) {
-      const depStmt = db.prepare('INSERT OR IGNORE INTO API_DEPENDENTS (API_ID, DEPENDENT) VALUES (?, ?)');
+      const depStmt = db.prepare('INSERT OR IGNORE INTO API_DEPENDENTS (API_ID, DEPENDENT_ID) VALUES (?, ?)');
       for (const dep of apiData.dependents) {
         depStmt.run(apiData.id, dep);
       }
@@ -613,7 +624,7 @@ app.put('/api/apis/:id', (req, res) => {
     // Update dependencies
     db.prepare('DELETE FROM API_DEPENDENCIES WHERE API_ID = ?').run(id);
     if (apiData.dependencies && apiData.dependencies.length > 0) {
-      const depStmt = db.prepare('INSERT INTO API_DEPENDENCIES (API_ID, DEPENDS_ON) VALUES (?, ?)');
+      const depStmt = db.prepare('INSERT INTO API_DEPENDENCIES (API_ID, DEPENDS_ON_ID) VALUES (?, ?)');
       for (const dep of apiData.dependencies) {
         depStmt.run(id, dep);
       }
@@ -622,7 +633,7 @@ app.put('/api/apis/:id', (req, res) => {
     // Update dependents
     db.prepare('DELETE FROM API_DEPENDENTS WHERE API_ID = ?').run(id);
     if (apiData.dependents && apiData.dependents.length > 0) {
-      const depStmt = db.prepare('INSERT INTO API_DEPENDENTS (API_ID, DEPENDENT) VALUES (?, ?)');
+      const depStmt = db.prepare('INSERT INTO API_DEPENDENTS (API_ID, DEPENDENT_ID) VALUES (?, ?)');
       for (const dep of apiData.dependents) {
         depStmt.run(id, dep);
       }
